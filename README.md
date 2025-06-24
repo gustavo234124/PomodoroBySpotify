@@ -1,4 +1,5 @@
-# PomodoroBySpotify
+# PomodoroBySpotify <img src="https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg" alt="Spotify" width="30"/>
+
 Pomodoro esencial para estudiar o trabajar progresivamente con pausas activas mientras escuchas tu musica de Spotify
 
 El desarrollo de este proyecto fue  creado con [Next.js](https://nextjs.org/) que incluye todas las configuraciones necesarias para comenzar rápidamente con desarrollo moderno en React.
