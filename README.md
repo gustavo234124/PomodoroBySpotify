@@ -1,9 +1,7 @@
 # PomodoroBySpotify
 Pomodoro esencial para estudiar o trabajar progresivamente con pausas activas mientras escuchas tu musica de Spotify
 
-# 🧠 Mi Proyecto Next.js
-
-Este es un proyecto creado con [Next.js](https://nextjs.org/) que incluye todas las configuraciones necesarias para comenzar rápidamente con desarrollo moderno en React.
+El desarrollo de este proyecto fue  creado con [Next.js](https://nextjs.org/) que incluye todas las configuraciones necesarias para comenzar rápidamente con desarrollo moderno en React.
 
 ---
 
