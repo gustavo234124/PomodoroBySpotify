@@ -1,22 +1,20 @@
 {
   "name": "pomodorobyspotify",
   "version": "1.0.0",
-  "description": "Pomodoro esencial para estudiar o trabajar progresivamente con pausas activas mientras escuchas tu musica de Spotify",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "next": "^15.3.4",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "next": "^14.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.6",
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.21",
     "tailwindcss": "^4.1.10"
   }
 }
