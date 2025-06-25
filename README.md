@@ -62,4 +62,10 @@ Para usar esta aplicación necesitas una cuenta de desarrollador en Spotify y cr
 SPOTIFY_CLIENT_ID=tu_client_id
 SPOTIFY_CLIENT_SECRET=tu_client_secret
 NEXTAUTH_URL=http://localhost:3000
+____________________________________________
+##Instalacion de libreria Particle.js
+
+para visualizar correctamente el background de parituclas flotantes es necesario instalar la libre particle.js
+
+1.- npm install react-tsparticles@2.12.0 tsparticles@2.12.0
 
