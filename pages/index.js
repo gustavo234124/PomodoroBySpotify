@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ParticlesBackground from "../components/ParticlesBackground";
 
 export default function Home() {
   const [token, setToken] = useState(null);
@@ -16,8 +17,7 @@ export default function Home() {
     const expiresAt = parseInt(data.expires_at, 10);
     const now = Date.now();
 
-    if (expiresAt - now < 5 * 60 * 1000) { // Si queda menos de 5 minutos
-      // Renovar token
+    if (expiresAt - now < 5 * 60 * 1000) {
       const refreshRes = await fetch("/api/auth/refresh_token");
       if (refreshRes.ok) {
         const refreshData = await refreshRes.json();
@@ -33,10 +33,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchToken();
-
-    // Renovar automáticamente cada 5 minutos (opcional)
     const interval = setInterval(fetchToken, 5 * 60 * 1000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -50,8 +47,9 @@ export default function Home() {
 
   if (!token) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-black text-white">
-        <div className="text-center">
+      <div className="h-screen flex items-center justify-center text-white relative">
+        <ParticlesBackground />
+        <div className="text-center z-10">
           <h1 className="text-4xl font-bold mb-6">Bienvenido a PomodoroBySpotify</h1>
           <button
             className="bg-green-500 hover:bg-green-600 px-6 py-2 rounded font-semibold"
@@ -68,9 +66,7 @@ export default function Home() {
     <div className="h-screen flex items-center justify-center bg-green-900 text-white">
       <div className="text-center max-w-md px-4">
         <h1 className="text-3xl font-bold mb-4">🎉 ¡Sesión iniciada!</h1>
-        <p className="mb-2 break-words">
-          Tu token de acceso es:
-        </p>
+        <p className="mb-2 break-words">Tu token de acceso es:</p>
         <code className="text-xs bg-black/20 px-4 py-2 rounded break-all">{token}</code>
       </div>
     </div>
