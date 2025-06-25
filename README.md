@@ -65,7 +65,8 @@ NEXTAUTH_URL=http://localhost:3000
 ____________________________________________
 
 
-## 🎇 Animación de fondo con Particles.js <img src="https://vincentgarreau.com/particles.js/assets/img/particlesjs-og.png" alt="particles.js" width="30"/>
+## 🎇 Animación de fondo con Particles.js
+<img src="https://vincentgarreau.com/particles.js/assets/img/particlesjs-og.png" alt="particles.js" width="30"/>
 para visualizar correctamente el background de particulas flotantes es necesario instalar la libreria particle.js
 
 ### Instalación
