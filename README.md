@@ -65,10 +65,8 @@ NEXTAUTH_URL=http://localhost:3000
 ____________________________________________
 
 
-## 🎇 Animación de fondo con Particles.js
+## 🎇 Animación de fondo con Particles.js <img src="https://raw.githubusercontent.com/VincentGarreau/particles.js/master/img/particlesjs-logo.png" alt="particles.js" width="30"/>
 para visualizar correctamente el background de particulas flotantes es necesario instalar la libreria particle.js
-
-![particles.js](https://raw.githubusercontent.com/VincentGarreau/particles.js/master/img/particlesjs-logo.png)
 
 ### Instalación
 1.- npm install react-tsparticles@2.12.0 tsparticles@2.12.0
