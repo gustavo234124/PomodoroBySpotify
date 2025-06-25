@@ -68,7 +68,7 @@ ____________________________________________
 ## 🎇 Animación de fondo con Particles.js
 para visualizar correctamente el background de particulas flotantes es necesario instalar la libreria particle.js
 
-![Particles.js](https://raw.githubusercontent.com/VincentGarreau/particles.js/master/img/github-header.png)
+![particles.js](https://raw.githubusercontent.com/VincentGarreau/particles.js/master/img/particlesjs-logo.png)
 
 ### Instalación
 1.- npm install react-tsparticles@2.12.0 tsparticles@2.12.0
