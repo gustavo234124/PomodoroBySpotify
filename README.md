@@ -63,9 +63,15 @@ SPOTIFY_CLIENT_ID=tu_client_id
 SPOTIFY_CLIENT_SECRET=tu_client_secret
 NEXTAUTH_URL=http://localhost:3000
 ____________________________________________
-##Instalacion de libreria Particle.js
 
-para visualizar correctamente el background de parituclas flotantes es necesario instalar la libre particle.js
 
+## 🎇 Animación de fondo con Particles.js
+para visualizar correctamente el background de particulas flotantes es necesario instalar la libreria particle.js
+
+![Particles.js](https://raw.githubusercontent.com/VincentGarreau/particles.js/master/img/github-header.png)
+
+### Instalación
 1.- npm install react-tsparticles@2.12.0 tsparticles@2.12.0
+
+
 
