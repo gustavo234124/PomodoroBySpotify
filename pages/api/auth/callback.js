@@ -1,4 +1,4 @@
-// pages/api/auth/callback.js
+import { serialize } from "cookie";
 
 export default async function handler(req, res) {
   const code = req.query.code || null;
@@ -31,12 +31,34 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: data.error });
     }
 
-    // Puedes guardar estos tokens en sesión, cookies o una base de datos.
-    console.log("Access Token:", data.access_token);
-    console.log("Refresh Token:", data.refresh_token);
+    const expiresAt = Date.now() + data.expires_in * 1000; // timestamp en ms
 
-    // Por ahora, solo redirige al home con el token (esto lo mejoraremos luego)
-    res.redirect(`/?access_token=${data.access_token}`);
+    // Guardamos access_token, refresh_token y expires_at en cookies httpOnly
+    res.setHeader("Set-Cookie", [
+      serialize("access_token", data.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: data.expires_in,
+        path: "/",
+        sameSite: "lax",
+      }),
+      serialize("refresh_token", data.refresh_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60 * 24 * 30, // refreshtoken dura más, 30 días por ejemplo
+        path: "/",
+        sameSite: "lax",
+      }),
+      serialize("expires_at", expiresAt.toString(), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: data.expires_in,
+        path: "/",
+        sameSite: "lax",
+      }),
+    ]);
+
+    res.redirect("/");
   } catch (error) {
     console.error("Error al obtener tokens", error);
     res.status(500).send("Error al intercambiar el código");
