@@ -65,9 +65,12 @@ export default function Pomodoro() {
             </div>
           )}
 
-          <p className="break-words max-w-md mb-6">
-            <strong>Access Token:</strong> {accessToken}
-          </p>
+            {/*
+            <p className="break-words max-w-md mb-6">
+              <strong>Access Token:</strong> {accessToken}
+            </p>
+            */}
+
 
           <div className="mb-6 flex gap-4">
             <button
