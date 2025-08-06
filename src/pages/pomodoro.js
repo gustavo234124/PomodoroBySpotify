@@ -1,19 +1,36 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import SettingsMenu from "@/components/SettingsMenu";
+import OpenMusic from "@/components/OpenMusic";
 
 export default function Pomodoro() {
   const router = useRouter();
   const { token } = router.query;
   const [accessToken, setAccessToken] = useState(null);
-  const [musicOption, setMusicOption] = useState("predeterminada");
   const [profile, setProfile] = useState(null);
+  const [quotes, setQuotes] = useState([]);
+const [quote, setQuote] = useState("");
+
+useEffect(() => {
+  async function loadQuotes() {
+    try {
+      const res = await fetch("/frasesMotivadoras.json");
+      const data = await res.json();
+      setQuotes(data);
+      // Selecciona una aleatoria
+      setQuote(data[Math.floor(Math.random() * data.length)]);
+    } catch (error) {
+      console.error("Error cargando frases motivadoras:", error);
+    }
+  }
+
+  loadQuotes();
+}, []);
 
   useEffect(() => {
     if (token) setAccessToken(token);
   }, [token]);
 
-  // Obtener perfil si hay token
   useEffect(() => {
     if (!accessToken) return;
 
@@ -37,75 +54,37 @@ export default function Pomodoro() {
     fetchProfile();
   }, [accessToken]);
 
-  const handleMusicOptionChange = (option) => {
-    setMusicOption(option);
-  };
-
   return (
     <div className="h-screen flex flex-col items-center justify-center bg-zinc-900 text-white p-4 relative">
-      {/* Menú de configuración siempre visible */}
+      {/* Menú de configuración */}
       <SettingsMenu />
 
-      <h1 className="text-3xl mb-6">PomodoroBySpotify</h1>
+      {/* Temporizador */}
+      <p className="text-9xl font-bold text-white mb-6">30:50</p>
 
-      {accessToken ? (
-        <>
-          {profile && (
-            <div className="absolute top-10 left-10 flex items-center gap-3">
-              {profile.images?.[0]?.url && (
-                <img
-                  src={profile.images[0].url}
-                  alt="Foto de perfil"
-                  className="w-15 h-15 rounded-full border-1 border-white"
-                />
-              )}
-              <p className="text-white font-medium">
-                Hola {profile.display_name || "Usuario"}
-              </p>
-            </div>
+<p className="text-lg text-gray-300 italic text-center max-w-md">
+  {quote}
+</p>
+
+
+      {/* Perfil si está logueado */}
+      {accessToken && profile && (
+        <div className="absolute top-10 left-10 flex items-center gap-3">
+          {profile.images?.[0]?.url && (
+            <img
+              src={profile.images[0].url}
+              alt="Foto de perfil"
+              className="w-15 h-15 rounded-full border-1 border-white"
+            />
           )}
-
-            {/*
-            <p className="break-words max-w-md mb-6">
-              <strong>Access Token:</strong> {accessToken}
-            </p>
-            */}
-
-
-          <div className="mb-6 flex gap-4">
-            <button
-              onClick={() => handleMusicOptionChange("spotify")}
-              className={`px-4 py-2 rounded ${
-                musicOption === "spotify" ? "bg-green-600" : "bg-gray-700"
-              }`}
-            >
-              Música Spotify
-            </button>
-            <button
-              onClick={() => handleMusicOptionChange("predeterminada")}
-              className={`px-4 py-2 rounded ${
-                musicOption === "predeterminada" ? "bg-green-600" : "bg-gray-700"
-              }`}
-            >
-              Música Predeterminada
-            </button>
-          </div>
-
-          {musicOption === "spotify" ? (
-            <p>Aquí iría el reproductor o lógica para música Spotify</p>
-          ) : (
-            <p>Aquí iría la música predeterminada</p>
-          )}
-        </>
-      ) : (
-        <>
-          <p className="mb-6">Estás usando música predeterminada sin iniciar sesión.</p>
-          <p className="opacity-50 italic mb-6">
-            La opción de Spotify no está disponible sin login.
+          <p className="text-white font-medium">
+            Hola {profile.display_name || "Usuario"}
           </p>
-          <p>Aquí va la música predeterminada</p>
-        </>
+        </div>
       )}
+
+      {/* Modal para seleccionar música */}
+      <OpenMusic accessToken={accessToken} />
     </div>
   );
 }
