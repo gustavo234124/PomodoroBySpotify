@@ -2,6 +2,9 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import SettingsMenu from "@/components/SettingsMenu";
 import OpenMusic from "@/components/OpenMusic";
+import PlayPomodoro from "@/components/PlayPomodoro";
+import OpenTask from "@/components/OpenTask";
+
 
 export default function Pomodoro() {
   const router = useRouter();
@@ -9,23 +12,22 @@ export default function Pomodoro() {
   const [accessToken, setAccessToken] = useState(null);
   const [profile, setProfile] = useState(null);
   const [quotes, setQuotes] = useState([]);
-const [quote, setQuote] = useState("");
+  const [quote, setQuote] = useState("");
 
-useEffect(() => {
-  async function loadQuotes() {
-    try {
-      const res = await fetch("/frasesMotivadoras.json");
-      const data = await res.json();
-      setQuotes(data);
-      // Selecciona una aleatoria
-      setQuote(data[Math.floor(Math.random() * data.length)]);
-    } catch (error) {
-      console.error("Error cargando frases motivadoras:", error);
+  useEffect(() => {
+    async function loadQuotes() {
+      try {
+        const res = await fetch("/frasesMotivadoras.json");
+        const data = await res.json();
+        setQuotes(data);
+        setQuote(data[Math.floor(Math.random() * data.length)]);
+      } catch (error) {
+        console.error("Error cargando frases motivadoras:", error);
+      }
     }
-  }
 
-  loadQuotes();
-}, []);
+    loadQuotes();
+  }, []);
 
   useEffect(() => {
     if (token) setAccessToken(token);
@@ -62,10 +64,17 @@ useEffect(() => {
       {/* Temporizador */}
       <p className="text-9xl font-bold text-white mb-6">30:50</p>
 
-<p className="text-lg text-gray-300 italic text-center max-w-md">
-  {quote}
-</p>
+      {/* Frase motivadora */}
+      <p className="text-lg text-gray-300 italic text-center max-w-md">
+        {quote}
+      </p>
 
+      {/* Botones: Play y Música en línea */}
+      <div className="flex items-center justify-center gap-6 mt-10">
+        <OpenMusic accessToken={accessToken} />
+        <PlayPomodoro />
+        <OpenTask />
+      </div>
 
       {/* Perfil si está logueado */}
       {accessToken && profile && (
@@ -82,9 +91,6 @@ useEffect(() => {
           </p>
         </div>
       )}
-
-      {/* Modal para seleccionar música */}
-      <OpenMusic accessToken={accessToken} />
     </div>
   );
 }
