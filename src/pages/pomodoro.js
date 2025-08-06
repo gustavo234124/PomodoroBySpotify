@@ -1,18 +1,19 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import SettingsMenu from "@/components/SettingsMenu";
 
 export default function Pomodoro() {
   const router = useRouter();
   const { token } = router.query;
   const [accessToken, setAccessToken] = useState(null);
   const [musicOption, setMusicOption] = useState("predeterminada");
-  const [profile, setProfile] = useState(null); // Aquí guardaremos la info del usuario
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     if (token) setAccessToken(token);
   }, [token]);
 
-  // Cuando tenemos el accessToken, hacemos fetch para obtener perfil
+  // Obtener perfil si hay token
   useEffect(() => {
     if (!accessToken) return;
 
@@ -41,21 +42,26 @@ export default function Pomodoro() {
   };
 
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-zinc-900 text-white p-4">
+    <div className="h-screen flex flex-col items-center justify-center bg-zinc-900 text-white p-4 relative">
+      {/* Menú de configuración siempre visible */}
+      <SettingsMenu />
+
       <h1 className="text-3xl mb-6">PomodoroBySpotify</h1>
 
       {accessToken ? (
         <>
           {profile && (
-            <div className="mb-6 flex items-center gap-4">
+            <div className="absolute top-10 left-10 flex items-center gap-3">
               {profile.images?.[0]?.url && (
                 <img
                   src={profile.images[0].url}
                   alt="Foto de perfil"
-                  className="w-12 h-12 rounded-full"
+                  className="w-15 h-15 rounded-full border-1 border-white"
                 />
               )}
-              <p>Hola, {profile.display_name || "Usuario"}</p>
+              <p className="text-white font-medium">
+                Hola {profile.display_name || "Usuario"}
+              </p>
             </div>
           )}
 
@@ -91,7 +97,9 @@ export default function Pomodoro() {
       ) : (
         <>
           <p className="mb-6">Estás usando música predeterminada sin iniciar sesión.</p>
-          <p className="opacity-50 italic mb-6">La opción de Spotify no está disponible sin login.</p>
+          <p className="opacity-50 italic mb-6">
+            La opción de Spotify no está disponible sin login.
+          </p>
           <p>Aquí va la música predeterminada</p>
         </>
       )}
