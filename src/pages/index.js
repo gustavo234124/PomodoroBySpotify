@@ -1,115 +1,108 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import ParticlesBackground from "@/components/ParticlesBackground";
+import Link from "next/link";
 
 export default function Home() {
-  return (
-    <div
-      className={`${geistSans.className} ${geistMono.className} font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20`}
-    >
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/pages/index.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const router = useRouter();
+  const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  async function fetchToken() {
+    setLoading(true);
+    const res = await fetch("/api/auth/get_token");
+    if (!res.ok) {
+      setToken(null);
+      setLoading(false);
+      return;
+    }
+    const data = await res.json();
+    const expiresAt = parseInt(data.expires_at, 10);
+    const now = Date.now();
+
+    if (expiresAt - now < 5 * 60 * 1000) {
+      const refreshRes = await fetch("/api/auth/refresh_token");
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json();
+        setToken(refreshData.access_token);
+        router.push({
+          pathname: "/pomodoro",
+          query: { token: refreshData.access_token },
+        });
+      } else {
+        setToken(null);
+      }
+    } else {
+      setToken(data.access_token);
+      router.push({
+        pathname: "/pomodoro",
+        query: { token: data.access_token },
+      });
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    fetchToken();
+    const interval = setInterval(fetchToken, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-zinc-900 text-white">
+        <p className="text-lg animate-pulse">Cargando...</p>
+      </div>
+    );
+  }
+
+  if (!token) {
+    // Aquí va tu UI de login normal (botón, etc)
+    return (
+      <div className="relative min-h-screen flex items-center justify-center">
+        <ParticlesBackground />
+        <div className="backdrop-blur-lg bg-white/10 rounded-xl p-8 shadow-lg w-full max-w-[800px] flex flex-col items-center justify-center mx-4
+          sm:w-[80vw]
+          xs:w-[98vw]">
+          <p className="text-white text-3xl font-bold text-center">
+            Bienvenido a PomodoroBySpotify
+          </p>
+          <img 
+            src="/iconanimation.gif" 
+            autoPlay 
+            loop 
+            muted 
+            playsInline 
+            className="w-full max-w-xs mx-auto"
+          />
+          <p className="text-white text-2xl font-bold text-center py-5">
+            Conéctate para sincronizar tus playlist favoritas
+          </p>
+         <button
+  className="bg-[#1DB954] hover:bg-[#179443] text-white font-bold py-2 px-4 rounded flex items-center gap-[10px]"
+  onClick={() => {
+    window.location.href = "/api/auth/login"; // tu endpoint login
+  }}
+>
+  Iniciar Sesión
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 168 168"
+    fill="#FFFFFF"
+    className="w-6 h-6"
+  >
+    <path d="M84 0C37.7 0 0 37.7 0 84s37.7 84 84 84 84-37.7 84-84-37.7-84-84-84zm38.8 121.2c-1.3 2-3.9 2.7-5.9 1.4-16.1-10-36.4-12.3-60.3-7.1-2.3.5-4.6-1-5-3.3-.5-2.3 1-4.6 3.3-5 26.4-6.2 48.9-3.5 67 8.2 2 1.3 2.7 3.9 1.4 5.8zm7.6-18.5c-1.6 2.5-4.9 3.3-7.4 1.7-18.4-11.8-46.4-15.2-68.3-8.7-2.8.8-5.8-.8-6.6-3.6-.8-2.8.8-5.8 3.6-6.6 25-7.3 57.3-3.6 79.1 9.7 2.4 1.5 3.2 4.8 1.6 7.5zm.2-18.7c-22.3-13.6-59.2-14.9-81.6-8.6-3.3 1-6.8-1-7.8-4.3-1-3.3 1-6.8 4.3-7.8 25-7.5 66-6.1 91.6 9.3 3.1 1.9 4.1 6 2.2 9.1-1.9 3.2-6 4.2-9.1 2.3z" />
+  </svg>
+</button>
+
+  <Link href="/pomodoro" legacyBehavior>
+            <a className="text-blue-500 underline py-5">Ahora no</a>
+          </Link>
+
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+      </div>
+    );
+  }
+
+  return null; // Por si acaso
 }
