@@ -176,12 +176,34 @@ useEffect(() => {
 )}
 
 
-          {/* Placeholder para los demás */}
-          {activeModal !== "alarma" && (
-            <p className="text-sm">
-              Aquí pondrás la configuración de <strong>{activeModal}</strong>.
-            </p>
-          )}
+
+{activeModal === "reinicio" && (
+  <div className="space-y-2">
+    <h4 className="font-semibold">Reinicio automático</h4>
+    <p className="text-sm text-gray-600">Aquí el código de Reinicio automático.</p>
+  </div>
+)}
+
+{activeModal === "fondo" && (
+  <div className="space-y-2">
+    <h4 className="font-semibold">Fondo</h4>
+    <p className="text-sm text-gray-600">Aquí el código de Fondo.</p>
+  </div>
+)}
+
+{activeModal === "tiempo" && (
+  <div className="space-y-2">
+    <h4 className="font-semibold">Tiempo de concentración</h4>
+    <p className="text-sm text-gray-600">Aquí el código de Tiempo de concentración.</p>
+  </div>
+)}
+
+{activeModal === "notificaciones" && (
+  <div className="space-y-2">
+    <h4 className="font-semibold">Notificaciones</h4>
+    <p className="text-sm text-gray-600">Aquí el código de Notificaciones.</p>
+  </div>
+)}
         </div>
       )}
     </div>
