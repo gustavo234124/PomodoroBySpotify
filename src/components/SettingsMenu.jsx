@@ -59,6 +59,45 @@ useEffect(() => {
 }, [alarmVolume]);
 
 
+// Estado de notificaciones (inicia en false; se sincroniza en useEffect)
+const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+// Sincroniza el estado según el permiso actual del navegador
+useEffect(() => {
+  if (typeof window !== "undefined" && "Notification" in window) {
+    setNotificationsEnabled(Notification.permission === "granted");
+  }
+}, []);
+
+// Toggle que solicita permisos cuando se activa
+const toggleNotifications = async () => {
+  if (typeof window === "undefined" || !("Notification" in window)) {
+    alert("Este navegador no soporta notificaciones.");
+    return;
+  }
+
+  // Si está activo y lo apagan, solo cambiamos el estado local
+  if (notificationsEnabled) {
+    setNotificationsEnabled(false);
+    return;
+  }
+
+  // Si está desactivado, pedimos permiso
+  try {
+    const result = await Notification.requestPermission();
+    if (result === "granted") {
+      setNotificationsEnabled(true);
+    } else {
+      setNotificationsEnabled(false);
+      alert("No se concedieron permisos de notificación.");
+    }
+  } catch (err) {
+    console.error("Error solicitando permisos de notificación:", err);
+    setNotificationsEnabled(false);
+  }
+};
+
+
 
 
   return (
@@ -199,11 +238,33 @@ useEffect(() => {
 )}
 
 {activeModal === "notificaciones" && (
-  <div className="space-y-2">
-    <h4 className="font-semibold">Notificaciones</h4>
-    <p className="text-sm text-gray-600">Aquí el código de Notificaciones.</p>
+  <div>
+    {/* Header con título y switch alineados horizontalmente */}
+    <div className="flex items-center justify-between mb-3">
+      <h4 className="font-semibold">Notificaciones</h4>
+
+      {/* Switch accesible */}
+      <button
+        type="button"
+        role="switch"
+        aria-checked={notificationsEnabled}
+        onClick={toggleNotifications}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out 
+          ${notificationsEnabled ? "bg-green-500" : "bg-gray-300"}`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out 
+            ${notificationsEnabled ? "translate-x-5" : "translate-x-0"}`}
+        />
+      </button>
+    </div>
+
+    <p className="text-xs text-gray-600">
+      Estado: {notificationsEnabled ? "Activadas (permiso concedido)" : "Desactivadas"}
+    </p>
   </div>
 )}
+
         </div>
       )}
     </div>
