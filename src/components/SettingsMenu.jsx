@@ -59,6 +59,64 @@ useEffect(() => {
 }, [alarmVolume]);
 
 
+// Estado de notificaciones (inicia en false; se sincroniza en useEffect)
+const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+// Sincroniza el estado según el permiso actual del navegador
+useEffect(() => {
+  if (typeof window !== "undefined" && "Notification" in window) {
+    setNotificationsEnabled(Notification.permission === "granted");
+  }
+}, []);
+
+// Toggle que solicita permisos cuando se activa
+const toggleNotifications = async () => {
+  if (typeof window === "undefined" || !("Notification" in window)) {
+    alert("Este navegador no soporta notificaciones.");
+    return;
+  }
+
+  // Si está activo y lo apagan, solo cambiamos el estado local
+  if (notificationsEnabled) {
+    setNotificationsEnabled(false);
+    return;
+  }
+
+  // Si está desactivado, pedimos permiso
+  try {
+    const result = await Notification.requestPermission();
+    if (result === "granted") {
+      setNotificationsEnabled(true);
+    } else {
+      setNotificationsEnabled(false);
+      alert("No se concedieron permisos de notificación.");
+    }
+  } catch (err) {
+    console.error("Error solicitando permisos de notificación:", err);
+    setNotificationsEnabled(false);
+  }
+};
+
+
+// --- TIEMPOS (presets + custom) ---
+const [timePreset, setTimePreset] = useState("popular"); // 'popular' | 'medio' | 'extendido' | 'custom'
+const [pomodoroMin, setPomodoroMin] = useState(20);
+const [shortBreakMin, setShortBreakMin] = useState(5);
+const [longBreakMin, setLongBreakMin] = useState(10);
+
+function applyPreset(preset) {
+  setTimePreset(preset);
+  if (preset === "popular") {
+    setPomodoroMin(20); setShortBreakMin(5); setLongBreakMin(10);
+  } else if (preset === "medio") {
+    setPomodoroMin(40); setShortBreakMin(8); setLongBreakMin(15);
+  } else if (preset === "extendido") {
+    setPomodoroMin(60); setShortBreakMin(8); setLongBreakMin(15);
+  }
+  // 'custom' no cambia valores; solo habilita sliders
+}
+
+
 
 
   return (
@@ -192,18 +250,181 @@ useEffect(() => {
 )}
 
 {activeModal === "tiempo" && (
-  <div className="space-y-2">
-    <h4 className="font-semibold">Tiempo de concentración</h4>
-    <p className="text-sm text-gray-600">Aquí el código de Tiempo de concentración.</p>
+  <div className="space-y-6">
+    <h4 className="font-semibold text-xl">Tiempo de concentracion</h4>
+
+    {/* Popular */}
+    <button
+      type="button"
+      onClick={() => applyPreset("popular")}
+      className="w-full text-left"
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className={`mt-1 inline-block h-5 w-5 rounded-full border-2 ${
+            timePreset === "popular" ? "border-green-600 bg-green-600" : "border-gray-400"
+          }`}
+        />
+        <div>
+          <p className="font-semibold">Popular</p>
+          <ul className="text-gray-500">
+            <li>20 minutos pomodoro</li>
+            <li>5 minutos descanso</li>
+            <li>10 minutos descanso largo</li>
+          </ul>
+        </div>
+      </div>
+    </button>
+
+    {/* Medio */}
+    <button
+      type="button"
+      onClick={() => applyPreset("medio")}
+      className="w-full text-left"
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className={`mt-1 inline-block h-5 w-5 rounded-full border-2 ${
+            timePreset === "medio" ? "border-green-600 bg-green-600" : "border-gray-400"
+          }`}
+        />
+        <div>
+          <p className="font-semibold">Medio</p>
+          <ul className="text-gray-500">
+            <li>40 minutos pomodoro</li>
+            <li>8 minutos descanso</li>
+            <li>15 minutos descanso largo</li>
+          </ul>
+        </div>
+      </div>
+    </button>
+
+    {/* Extendido */}
+    <button
+      type="button"
+      onClick={() => applyPreset("extendido")}
+      className="w-full text-left"
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className={`mt-1 inline-block h-5 w-5 rounded-full border-2 ${
+            timePreset === "extendido" ? "border-green-600 bg-green-600" : "border-gray-400"
+          }`}
+        />
+        <div>
+          <p className="font-semibold">Extendido</p>
+          <ul className="text-gray-500">
+            <li>60 minutos pomodoro</li>
+            <li>8 minutos descanso</li>
+            <li>15 minutos descanso largo</li>
+          </ul>
+        </div>
+      </div>
+    </button>
+
+    {/* Personalizado */}
+    <button
+      type="button"
+      onClick={() => setTimePreset("custom")}
+      className="w-full text-left"
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className={`mt-1 inline-block h-5 w-5 rounded-full border-2 ${
+            timePreset === "custom" ? "border-green-600 bg-green-600" : "border-gray-400"
+          }`}
+        />
+        <div className="w-full">
+          <p className="font-semibold">Personalizado</p>
+
+          {/* Pomodoro */}
+          <div className="mt-3">
+            <div className="flex items-baseline justify-between">
+              <span className="text-2xl font-semibold">{pomodoroMin} minutos</span>
+              <span className="text-sm text-gray-500">Pomodoro</span>
+            </div>
+            <input
+              type="range"
+              min={5}
+              max={120}
+              step={5}
+              value={pomodoroMin}
+              onChange={(e) => setPomodoroMin(Number(e.target.value))}
+              disabled={timePreset !== "custom"}
+              className="w-full accent-gray-600 disabled:opacity-40"
+            />
+          </div>
+
+          {/* Descanso corto */}
+          <div className="mt-4">
+            <div className="flex items-baseline justify-between">
+              <span className="text-2xl font-semibold">{shortBreakMin} minutos</span>
+              <span className="text-sm text-gray-500">Descanso</span>
+            </div>
+            <input
+              type="range"
+              min={1}
+              max={30}
+              step={1}
+              value={shortBreakMin}
+              onChange={(e) => setShortBreakMin(Number(e.target.value))}
+              disabled={timePreset !== "custom"}
+              className="w-full accent-gray-600 disabled:opacity-40"
+            />
+          </div>
+
+          {/* Descanso largo */}
+          <div className="mt-4">
+            <div className="flex items-baseline justify-between">
+              <span className="text-2xl font-semibold">{longBreakMin} minutos</span>
+              <span className="text-sm text-gray-500">Descanso largo</span>
+            </div>
+            <input
+              type="range"
+              min={5}
+              max={60}
+              step={5}
+              value={longBreakMin}
+              onChange={(e) => setLongBreakMin(Number(e.target.value))}
+              disabled={timePreset !== "custom"}
+              className="w-full accent-gray-600 disabled:opacity-40"
+            />
+          </div>
+        </div>
+      </div>
+    </button>
   </div>
 )}
 
+
 {activeModal === "notificaciones" && (
-  <div className="space-y-2">
-    <h4 className="font-semibold">Notificaciones</h4>
-    <p className="text-sm text-gray-600">Aquí el código de Notificaciones.</p>
+  <div>
+    {/* Header con título y switch alineados horizontalmente */}
+    <div className="flex items-center justify-between mb-3">
+      <h4 className="font-semibold">Notificaciones</h4>
+
+      {/* Switch accesible */}
+      <button
+        type="button"
+        role="switch"
+        aria-checked={notificationsEnabled}
+        onClick={toggleNotifications}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out 
+          ${notificationsEnabled ? "bg-green-500" : "bg-gray-300"}`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out 
+            ${notificationsEnabled ? "translate-x-5" : "translate-x-0"}`}
+        />
+      </button>
+    </div>
+
+    <p className="text-xs text-gray-600">
+      Estado: {notificationsEnabled ? "Activadas (permiso concedido)" : "Desactivadas"}
+    </p>
   </div>
 )}
+
         </div>
       )}
     </div>
