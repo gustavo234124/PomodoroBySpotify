@@ -116,6 +116,8 @@ function applyPreset(preset) {
   // 'custom' no cambia valores; solo habilita sliders
 }
 
+const [autoPomodoro, setAutoPomodoro] = useState(false);
+const [autoBreaks, setAutoBreaks] = useState(false);
 
 
 
@@ -238,7 +240,7 @@ function applyPreset(preset) {
 {activeModal === "reinicio" && (
   <div className="space-y-2">
     <h4 className="font-semibold">Reinicio automático</h4>
-    <p className="text-sm text-gray-600">Aquí el código de Reinicio automático.</p>
+    <p className="text-sm text-gray-600">Aquí el código de Reinicio automático seccion de reinicio</p>
   </div>
 )}
 
