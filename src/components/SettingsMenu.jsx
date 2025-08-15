@@ -76,7 +76,7 @@ const toggleNotifications = async () => {
     return;
   }
 
-  // Si está activo y lo apagan, solo cambiamos el estado local
+  // Si está activo y lo apagan, solo cambiamos el estado local cambios locales necesarios
   if (notificationsEnabled) {
     setNotificationsEnabled(false);
     return;
