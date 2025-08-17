@@ -238,9 +238,47 @@ const [autoBreaks, setAutoBreaks] = useState(false);
 
 
 {activeModal === "reinicio" && (
-  <div className="space-y-2">
-    <h4 className="font-semibold">Reinicio automático</h4>
-    <p className="text-sm text-gray-600">Aquí el código de Reinicio automático seccion de reinicio</p>
+  <div className="space-y-6">
+
+    {/* Iniciar Pomodoros automáticamente */}
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-gray-700">Iniciar pomodoros automáticamente</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={autoPomodoro}
+        onClick={() => setAutoPomodoro(!autoPomodoro)}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+          autoPomodoro ? "bg-green-500" : "bg-gray-300"
+        }`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+            autoPomodoro ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
+      </button>
+    </div>
+
+    {/* Iniciar descansos automáticamente */}
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-gray-700">Iniciar descansos automáticamente</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={autoBreaks}
+        onClick={() => setAutoBreaks(!autoBreaks)}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+          autoBreaks ? "bg-green-500" : "bg-gray-300"
+        }`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+            autoBreaks ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
+      </button>
+    </div>
   </div>
 )}
 
