@@ -1,3 +1,4 @@
+import { useBackground } from "@/components/BackgroundContext";
 import { useState } from "react";
 import { useEffect, useRef } from "react";
 
@@ -6,6 +7,7 @@ export default function SettingsMenu() {
   const [activeModal, setActiveModal] = useState(null);
   const [alarmSound, setAlarmSound] = useState("sound1"); // sound1 | sound2 | mute
   const [alarmVolume, setAlarmVolume] = useState(50); // 0 - 100
+  const { changeBackground } = useBackground();
 const audioRef = useRef(null);
 
   
@@ -283,9 +285,73 @@ const [autoBreaks, setAutoBreaks] = useState(false);
 )}
 
 {activeModal === "fondo" && (
-  <div className="space-y-2">
-    <h4 className="font-semibold">Fondo</h4>
-    <p className="text-sm text-gray-600">Aquí el código de Fondo.</p>
+  <div className="space-y-6">
+
+    {/* Colores */}
+    <div>
+      <h5 className="font-semibold text-white mb-2">Colores</h5>
+      <div className="grid grid-cols-5 gap-3">
+        {[
+          "bg-gradient-to-tr from-pink-500 to-blue-400",
+          "bg-gradient-to-tr from-gray-900 to-purple-600",
+          "bg-gradient-to-tr from-teal-400 to-green-600",
+          "bg-gradient-to-tr from-yellow-400 to-orange-600",
+          "bg-gradient-to-tr from-pink-600 to-purple-800",
+          "bg-gradient-to-tr from-yellow-400 to-pink-500",
+          "bg-gradient-to-tr from-slate-500 to-red-700",
+          "bg-gradient-to-tr from-indigo-300 to-white",
+          "bg-gradient-to-tr from-pink-300 to-lime-400",
+          "bg-gradient-to-tr from-blue-500 to-green-400",
+        ].map((color, i) => (
+          <button
+            key={i}
+            className={`w-12 h-12 rounded-xl ${color} transition-transform hover:scale-105`}
+            onClick={() => {
+              localStorage.setItem("bg-fondo", color);
+              if (typeof changeBackground === "function") {
+                changeBackground(color);
+              } else {
+                console.error("changeBackground is not a function");
+              }
+            }}
+          />
+        ))}
+      </div>
+    </div>
+
+    {/* Imágenes */}
+    <div>
+      <h5 className="font-semibold text-white mb-2">Imágenes</h5>
+      <div className="grid grid-cols-5 gap-3">
+        {[
+          "/fondoUno.jpg",
+          "/fondoarte.jpg",
+          "/fondoartegris.jpg",
+          "/fondoatardecer.jpg",
+          "/fondobosque.jpg",
+          "/Fondoespacio.jpg",
+          "/fondopapel.jpg",
+          "/fondomascota.jpg",
+          "/fondonewyork.jpg",
+          "/fondopapelsecundario.jpg",
+        ].map((src, i) => (
+          <button
+            key={i}
+            className="w-12 h-12 rounded-xl overflow-hidden hover:scale-105 transition-transform"
+            onClick={() => {
+              localStorage.setItem("bg-fondo", src);
+              if (typeof changeBackground === "function") {
+                changeBackground(src);
+              } else {
+                console.error("changeBackground is not a function");
+              }
+            }}
+          >
+            <img src={src} alt={`Fondo ${i}`} className="object-cover w-full h-full" />
+          </button>
+        ))}
+      </div>
+    </div>
   </div>
 )}
 
