@@ -99,6 +99,27 @@ const toggleNotifications = async () => {
   }
 };
 
+useEffect(() => {
+  const imagenes = [
+    "/fondoUno.webp",
+    "/fondoarte.webp",
+    "/fondoartegris.webp",
+    "/fondoatardecer.webp",
+    "/fondobosque.webp",
+    "/Fondoespacio.webp",
+    "/fondopapel.webp",
+    "/fondomascota.webp",
+    "/fondonewyork.webp",
+    "/fondopapelsecundario.webp",
+  ];
+
+  imagenes.forEach((src) => {
+    const img = new Image();
+    img.src = src;
+  });
+}, []);
+
+
 
 // --- TIEMPOS (presets + custom) ---
 const [timePreset, setTimePreset] = useState("popular"); // 'popular' | 'medio' | 'extendido' | 'custom'
@@ -324,16 +345,16 @@ const [autoBreaks, setAutoBreaks] = useState(false);
       <h5 className="font-semibold text-white mb-2">Imágenes</h5>
       <div className="grid grid-cols-5 gap-3">
         {[
-          "/fondoUno.jpg",
-          "/fondoarte.jpg",
-          "/fondoartegris.jpg",
-          "/fondoatardecer.jpg",
-          "/fondobosque.jpg",
-          "/Fondoespacio.jpg",
-          "/fondopapel.jpg",
-          "/fondomascota.jpg",
-          "/fondonewyork.jpg",
-          "/fondopapelsecundario.jpg",
+          "/fondoUno.webp",
+          "/fondoarte.webp",
+          "/fondoartegris.webp",
+          "/fondoatardecer.webp",
+          "/fondobosque.webp",
+          "/Fondoespacio.webp",
+          "/fondopapel.webp",
+          "/fondomascota.webp",
+          "/fondonewyork.webp",
+          "/fondopapelsecundario.webp",
         ].map((src, i) => (
           <button
             key={i}

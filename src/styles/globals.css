@@ -23,4 +23,5 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+    transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
 }
