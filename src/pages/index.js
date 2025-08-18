@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import Link from "next/link";
+import FullScreenToggle from "@/components/FullScreenToggle";
+
 
 export default function Home() {
   const router = useRouter();
@@ -41,6 +43,16 @@ export default function Home() {
     }
     setLoading(false);
   }
+
+
+const [background, setBackground] = useState(null);
+
+useEffect(() => {
+  const storedBg = localStorage.getItem("bg-fondo");
+  if (storedBg) {
+    setBackground(storedBg);
+  }
+}, []);
 
   useEffect(() => {
     fetchToken();
@@ -100,7 +112,11 @@ export default function Home() {
           </Link>
 
         </div>
+         <div className="fixed bottom-4 right-4 z-50">
+        <FullScreenToggle />
       </div>
+      </div>
+
     );
   }
 

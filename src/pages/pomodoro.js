@@ -1,12 +1,16 @@
+import { useBackground } from "@/components/BackgroundContext";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import SettingsMenu from "@/components/SettingsMenu";
 import OpenMusic from "@/components/OpenMusic";
 import PlayPomodoro from "@/components/PlayPomodoro";
 import OpenTask from "@/components/OpenTask";
+import FullScreenToggle from "@/components/FullScreenToggle";
 
 export default function Pomodoro() {
   const router = useRouter();
+  const { background } = useBackground();
+  const isImage = background?.startsWith("/");
   const { token } = router.query;
   const [accessToken, setAccessToken] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -54,14 +58,28 @@ export default function Pomodoro() {
     setShowLogout(v => !v);
   };
 
+  
 // Reemplaza esta función en tu Pomodoro.js:
 const handleLogout = () => {
   // Navega al endpoint de logout en el servidor...
   window.location.href = "/api/auth/logout";
 };
   return (
-    <div className="h-screen flex flex-col items-center justify-center bg-zinc-900 text-white p-4 relative">
-      <SettingsMenu />
+<div
+    className={`h-screen flex flex-col items-center justify-center text-white p-4 relative transition-all duration-500 ${
+      isImage ? "" : background
+    }`}
+    style={
+      isImage
+        ? {
+            backgroundImage: `url(${background})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }
+        : {}
+    }
+  >  
+ <SettingsMenu />
 
       <p className="text-9xl font-bold text-white mb-6">30:50</p>
       <p className="text-lg text-gray-300 italic text-center max-w-md">{quote}</p>
@@ -98,6 +116,9 @@ const handleLogout = () => {
           </p>
         </div>
       )}
+      <div className="fixed bottom-4 right-4 z-50">
+        <FullScreenToggle />
+      </div>
     </div>
   );
 }
