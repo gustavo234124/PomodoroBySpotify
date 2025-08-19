@@ -1,16 +1,79 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-export default function PlayPomodoro({ onPlay, onPause }) {
+
+export default function PlayPomodoro({ onPlay, onPause, setFormattedTime, onStop }) {
+  //constates para manejar el estado del tiempo
+const [timeLeft, setTimeLeft] = useState(1 * 60); // 25 minutos en segundos
+const [isRunning, setIsRunning] = useState(false);
+
+//constantes para manejo de botones
+const handlePlay = () => {
+  setIsRunning(true);
+};
+
+const handlePause = () => {
+  setIsRunning(false);
+};
+
+//constantes para manejo de tiempo en minutos ys egundos
+const minutes = Math.floor(timeLeft / 60);
+const seconds = timeLeft % 60;
+const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handleClick = () => {
     if (isPlaying) {
-      onPause && onPause();
-    } else {
+      handlePause();
+    onPause && onPause();
+      } else {
+              handlePlay();
       onPlay && onPlay();
     }
     setIsPlaying(!isPlaying);
   };
+
+  //funcion para que elt eimpo se reduzca solo cuando isRunning sea true
+useEffect(() => {
+  let timer;
+  if (isRunning) {
+    timer = setInterval(() => {
+      setTimeLeft((prev) => {
+if (prev <= 1) {
+  clearInterval(timer);
+  setIsRunning(false);
+  setIsPlaying(false);
+  console.log("Pomodoro stopped");
+  setFormattedTime("00:00");
+
+  // ✅ Llamar onPause y onStop si existen
+  onPause && onPause();
+  onStop && onStop();
+
+  // ✅ Tocar la alarma si existe
+  if (typeof window !== "undefined" && window.pomodoroAlarm?.current) {
+    const audio = window.pomodoroAlarm.current;
+    audio.currentTime = 0;
+    audio.play().catch((err) =>
+      console.error("Error al reproducir alarma:", err)
+    );
+  }
+
+  return 0;
+}
+
+        const updatedTime = prev - 1;
+        const minutes = Math.floor(updatedTime / 60);
+        const seconds = updatedTime % 60;
+        const formatted = `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`;
+        setFormattedTime(formatted);
+        return updatedTime;
+      });
+    }, 1000);
+  }
+  return () => clearInterval(timer);
+}, [isRunning]);
 
   return (
     <button

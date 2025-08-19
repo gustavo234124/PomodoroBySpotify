@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Carpetas temporales de conversión de imágenes
+/converted
+/temp-webp
+
+# Archivos generados automáticamente por scripts
+*.bak
+*.tmp

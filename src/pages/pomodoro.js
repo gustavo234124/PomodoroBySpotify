@@ -1,6 +1,6 @@
 import { useBackground } from "@/components/BackgroundContext";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import SettingsMenu from "@/components/SettingsMenu";
 import OpenMusic from "@/components/OpenMusic";
 import PlayPomodoro from "@/components/PlayPomodoro";
@@ -17,6 +17,7 @@ export default function Pomodoro() {
   const [quotes, setQuotes] = useState([]);
   const [quote, setQuote] = useState("");
   const [showLogout, setShowLogout] = useState(false);
+  const [formattedTime, setFormattedTime] = useState("01:00");
 
   useEffect(() => {
     async function loadQuotes() {
@@ -58,12 +59,32 @@ export default function Pomodoro() {
     setShowLogout(v => !v);
   };
 
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && audioRef.current) {
+      window.pomodoroAlarm = audioRef;
+    }
+  }, []);
+
   
-// Reemplaza esta función en tu Pomodoro.js:
-const handleLogout = () => {
-  // Navega al endpoint de logout en el servidor...
-  window.location.href = "/api/auth/logout";
+  // Reemplaza esta función en tu Pomodoro.js:
+  const handleLogout = () => {
+    // Navega al endpoint de logout en el servidor...
+    window.location.href = "/api/auth/logout";
+  };
+
+  const handlePlay = () => {
+    console.log("Pomodoro started");
+  };
+
+  const handlePause = () => {
+    console.log("Pomodoro paused");
+  };
+const handleStop = () => {
+  console.log("Pomodoro stopped (handleStop)");
 };
+
   return (
 <div
     className={`h-screen flex flex-col items-center justify-center text-white p-4 relative transition-all duration-500 ${
@@ -80,14 +101,18 @@ const handleLogout = () => {
     }
   >  
  <SettingsMenu />
+        <p className="text-9xl font-bold text-white mb-6">{formattedTime}</p>
 
-      <p className="text-9xl font-bold text-white mb-6">30:50</p>
       <p className="text-lg text-gray-300 italic text-center max-w-md">{quote}</p>
 
       <div className="flex items-center justify-center gap-6 mt-10">
         <OpenMusic accessToken={accessToken} />
-        <PlayPomodoro />
-        <OpenTask />
+        <PlayPomodoro
+          setFormattedTime={setFormattedTime}
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onStop={handleStop} // <-- agrega esta línea
+        />        <OpenTask />
       </div>
 
       {accessToken && profile && (
@@ -119,6 +144,7 @@ const handleLogout = () => {
       <div className="fixed bottom-4 right-4 z-50">
         <FullScreenToggle />
       </div>
+      <audio ref={audioRef} hidden preload="auto" />
     </div>
   );
 }

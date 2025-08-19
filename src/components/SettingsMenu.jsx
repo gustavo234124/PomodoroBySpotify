@@ -10,6 +10,11 @@ export default function SettingsMenu() {
   const { changeBackground } = useBackground();
 const audioRef = useRef(null);
 
+useEffect(() => {
+  if (typeof window !== "undefined") {
+    window.pomodoroAlarm = audioRef;
+  }
+}, []);
   
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
