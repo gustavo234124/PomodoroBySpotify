@@ -1,7 +1,7 @@
 import { useBackground } from "@/components/BackgroundContext";
 import { useRouter } from "next/router";
 import { useEffect, useState, useRef } from "react";
-import SettingsMenuWithAudio from "@/components/SettingsMenuWithAudio";
+import SettingsMenu from "@/components/SettingsMenu";
 import OpenMusic from "@/components/OpenMusic";
 import PlayPomodoro from "@/components/PlayPomodoro";
 import OpenTask from "@/components/OpenTask";
@@ -12,12 +12,55 @@ export default function Pomodoro() {
   const { background } = useBackground();
   const isImage = background?.startsWith("/");
   const { token } = router.query;
+  const [pomodoroDuration, setPomodoroDuration] = useState(20); // default: 20 minutos
+  
+  const [initialTimeLoaded, setInitialTimeLoaded] = useState(false);
+  
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedDuration = Number(localStorage.getItem("pomodoro-duration")) || 20;
+      setPomodoroDuration(savedDuration);
+      setInitialTimeLoaded(true);
+    }
+  }, []);
+
   const [accessToken, setAccessToken] = useState(null);
   const [profile, setProfile] = useState(null);
   const [quotes, setQuotes] = useState([]);
   const [quote, setQuote] = useState("");
   const [showLogout, setShowLogout] = useState(false);
-  const [formattedTime, setFormattedTime] = useState("01:00");
+  const [formattedTime, setFormattedTime] = useState("20:00");
+  const [alarmSound, setAlarmSound] = useState("sound1");
+  const [alarmVolume, setAlarmVolume] = useState(50);
+
+  useEffect(() => {
+    if (initialTimeLoaded) {
+      const minutes = pomodoroDuration;
+      const seconds = 0;
+      setFormattedTime(`${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`);
+    }
+  }, [pomodoroDuration, initialTimeLoaded]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedAlarm = localStorage.getItem("selected-alarm");
+      if (storedAlarm) {
+        setAlarmSound(storedAlarm);
+        console.log("🎵 Alarma cargada al montar:", storedAlarm);
+      }
+      // Ensure selectedSound is loaded safely in browser
+      const selectedSound = localStorage.getItem("selected-alarm") || "sound1";
+      // You can use selectedSound here if needed
+    }
+  }, []);
+
+  useEffect(() => {
+    const savedDuration = localStorage.getItem("pomodoro-duration");
+    if (savedDuration) {
+      setPomodoroDuration(Number(savedDuration));
+    }
+  }, []);
 
   useEffect(() => {
     async function loadQuotes() {
@@ -61,10 +104,36 @@ export default function Pomodoro() {
 
   const audioRef = useRef(null);
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && audioRef.current) {
-      window.pomodoroAlarm = audioRef;
-    }
+useEffect(() => {
+    if (!audioRef.current) return;
+
+    const handleStorageChange = () => {
+      const selectedSound = window.localStorage.getItem("selected-alarm");
+      console.log("⏰ Alarma actualizada a:", selectedSound);
+      setAlarmSound(selectedSound || "sound1"); // 🟢 Actualiza el estado también
+      console.log("🔁 Estado de alarmSound actualizado a:", selectedSound);
+
+      const soundPath =
+        selectedSound === "sound2"
+          ? "/sounds/sonidodos.mp3"
+          : "/sounds/sonidouno.mp3";
+
+      if (audioRef.current) {
+        audioRef.current.src = soundPath;
+        audioRef.current.load();
+        window.pomodoroAlarm = audioRef; // Asegurar referencia global
+      }
+    };
+
+    // Al montar, cargar alarma
+    handleStorageChange();
+
+    // Escuchar cambios en el localStorage
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   
@@ -93,6 +162,11 @@ const handleStop = () => {
   } else {
     console.warn("No hay alarma configurada o el audio no está listo.");
   }
+  const resetMinutes = pomodoroDuration
+    .toString()
+    .padStart(2, "0");
+  const resetSeconds = (0).toString().padStart(2, "0");
+  setFormattedTime(`${resetMinutes}:${resetSeconds}`);
 };
 
   return (
@@ -110,19 +184,26 @@ const handleStop = () => {
         : {}
     }
   >  
- <SettingsMenuWithAudio audioRef={audioRef} />
+ <SettingsMenu
+    audioRef={audioRef}
+    setPomodoroDuration={setPomodoroDuration}
+    pomodoroDuration={pomodoroDuration}
+  />
         <p className="text-9xl font-bold text-white mb-6">{formattedTime}</p>
 
       <p className="text-lg text-gray-300 italic text-center max-w-md">{quote}</p>
 
       <div className="flex items-center justify-center gap-6 mt-10">
         <OpenMusic accessToken={accessToken} />
-        <PlayPomodoro
-          setFormattedTime={setFormattedTime}
-          onPlay={handlePlay}
-          onPause={handlePause}
-          onStop={handleStop} // <-- agrega esta línea
-        />        <OpenTask />
+  <PlayPomodoro
+  initialMinutes={pomodoroDuration}
+  setFormattedTime={setFormattedTime}
+  onPlay={handlePlay}
+  onPause={handlePause}
+  onStop={handleStop}
+  alarmSound={alarmSound}
+/>
+        <OpenTask />
       </div>
 
       {accessToken && profile && (

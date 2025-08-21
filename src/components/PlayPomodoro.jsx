@@ -1,11 +1,20 @@
 import { useState, useEffect } from "react";
 
 
-export default function PlayPomodoro({ onPlay, onPause, setFormattedTime, onStop }) {
+export default function PlayPomodoro({ onPlay, onPause, setFormattedTime, onStop, alarmSound, initialMinutes }) {
   //constates para manejar el estado del tiempo
-const [timeLeft, setTimeLeft] = useState(10);
+const [timeLeft, setTimeLeft] = useState(0);
 const [isRunning, setIsRunning] = useState(false);
+const [selectedSound, setSelectedSound] = useState("sound1");
 
+useEffect(() => {
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("selected-alarm");
+    if (stored) {
+      setSelectedSound(stored);
+    }
+  }
+}, []);
 //constantes para manejo de botones
 const handlePlay = () => {
   setIsRunning(true);
@@ -14,6 +23,7 @@ const handlePlay = () => {
 const handlePause = () => {
   setIsRunning(false);
 };
+
 
 //constantes para manejo de tiempo en minutos ys egundos
 const minutes = Math.floor(timeLeft / 60);
@@ -31,6 +41,12 @@ const formattedTime = `${minutes.toString().padStart(2, "0")}:${seconds.toString
     }
     setIsPlaying(!isPlaying);
   };
+
+    // Detectar cambios en alarmSound
+  useEffect(() => {
+    console.log("⏰ Alarma actualizada a:", alarmSound);
+  }, [alarmSound]);
+
 
   //funcion para que elt eimpo se reduzca solo cuando isRunning sea true
 useEffect(() => {
@@ -50,13 +66,44 @@ if (prev <= 1) {
   onStop && onStop();
 
   // ✅ Tocar la alarma si existe
-  if (typeof window !== "undefined" && window.pomodoroAlarm?.current) {
-    const audio = window.pomodoroAlarm.current;
+  if (typeof window !== "undefined") {
+    console.log("✅ Leyendo desde localStorage en PlayPomodoro:", localStorage.getItem("selected-alarm"));
+    const selectedSound = localStorage.getItem("selected-alarm") || "sound1";
+    console.log("🔍 Valor actual de selected-alarm desde localStorage:", selectedSound);
+
+    let audioPath;
+    switch (selectedSound) {
+      case "sound1":
+        audioPath = "/sounds/sonidouno.mp3";
+        break;
+      case "sound2":
+        audioPath = "/sounds/sonidodos.mp3";
+        break;
+      default:
+        console.warn("⚠️ No se reconoce la alarma seleccionada, se usará sonidouno.mp3");
+        audioPath = "/sounds/sonidouno.mp3";
+    }
+
+    const audio = new Audio(audioPath);
     audio.currentTime = 0;
-    audio.play().catch((err) =>
+    audio.play().then(() => {
+      console.log("🔔 Reproduciendo:", selectedSound);
+    }).catch((err) =>
       console.error("Error al reproducir alarma:", err)
     );
+  } else {
+    console.warn("No hay alarma configurada o el audio no está listo.");
   }
+
+  // Reset timer to initialMinutes value, parsed safely
+  const parsed = parseInt(initialMinutes, 10);
+  const resetTime = isNaN(parsed) ? 0 : parsed * 60;
+  setTimeLeft(resetTime);
+  // Recalculate and set formatted time after resetting timeLeft
+  const minutes = Math.floor(resetTime / 60);
+  const seconds = resetTime % 60;
+  const formatted = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  setFormattedTime(formatted);
 
   return 0;
 }
@@ -74,6 +121,18 @@ if (prev <= 1) {
   }
   return () => clearInterval(timer);
 }, [isRunning]);
+
+
+// Initialize timeLeft and formattedTime when initialMinutes changes
+useEffect(() => {
+  const parsed = parseInt(initialMinutes, 10);
+  const duration = isNaN(parsed) ? 0 : parsed * 60;
+  setTimeLeft(duration);
+  const minutes = Math.floor(parsed);
+  const seconds = 0;
+  const formatted = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  setFormattedTime(formatted);
+}, [initialMinutes]);
 
   return (
     <button
