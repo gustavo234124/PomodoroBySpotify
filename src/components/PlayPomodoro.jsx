@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 
 export default function PlayPomodoro({ onPlay, onPause, setFormattedTime, onStop, alarmSound }) {
   //constates para manejar el estado del tiempo
-const [timeLeft, setTimeLeft] = useState(10);
+const [timeLeft, setTimeLeft] = useState(5);
 const [isRunning, setIsRunning] = useState(false);
 const [selectedSound, setSelectedSound] = useState("sound1");
 
@@ -93,6 +93,8 @@ if (prev <= 1) {
   } else {
     console.warn("No hay alarma configurada o el audio no está listo.");
   }
+
+  setTimeLeft(5); // ⏪ Reiniciar el timer a su valor original
 
   return 0;
 }

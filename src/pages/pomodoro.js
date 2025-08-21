@@ -12,12 +12,19 @@ export default function Pomodoro() {
   const { background } = useBackground();
   const isImage = background?.startsWith("/");
   const { token } = router.query;
+  const initialTime = 60; // en segundos (ejemplo: 1 minuto)
   const [accessToken, setAccessToken] = useState(null);
   const [profile, setProfile] = useState(null);
   const [quotes, setQuotes] = useState([]);
   const [quote, setQuote] = useState("");
   const [showLogout, setShowLogout] = useState(false);
-  const [formattedTime, setFormattedTime] = useState("01:00");
+  const [formattedTime, setFormattedTime] = useState(() => {
+    const minutes = Math.floor(initialTime / 60)
+      .toString()
+      .padStart(2, "0");
+    const seconds = (initialTime % 60).toString().padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  });
   const [alarmSound, setAlarmSound] = useState("sound1");
   const [alarmVolume, setAlarmVolume] = useState(50);
 
@@ -134,6 +141,11 @@ const handleStop = () => {
   } else {
     console.warn("No hay alarma configurada o el audio no está listo.");
   }
+  const resetMinutes = Math.floor(initialTime / 60)
+    .toString()
+    .padStart(2, "0");
+  const resetSeconds = (initialTime % 60).toString().padStart(2, "0");
+  setFormattedTime(`${resetMinutes}:${resetSeconds}`);
 };
 
   return (
