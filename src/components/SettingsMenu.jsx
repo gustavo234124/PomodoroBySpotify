@@ -2,12 +2,14 @@ import { useBackground } from "@/components/BackgroundContext";
 import { useState } from "react";
 import { useEffect, useRef } from "react";
 
-const SettingsMenu = ({ audioRef }) => {
+const SettingsMenu = ({ audioRef, setPomodoroDuration, pomodoroDuration }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [alarmSound, setAlarmSound] = useState("sound1"); // sound1 | sound2 | mute
   const [alarmVolume, setAlarmVolume] = useState(50); // 0 - 100
   const { changeBackground } = useBackground();
+  
+  
 // If audioRef is not provided, create a local one
 const internalAudioRef = useRef(null);
 const effectiveAudioRef = audioRef || internalAudioRef;
@@ -140,7 +142,7 @@ useEffect(() => {
 
 // --- TIEMPOS (presets + custom) ---
 const [timePreset, setTimePreset] = useState("popular"); // 'popular' | 'medio' | 'extendido' | 'custom'
-const [pomodoroMin, setPomodoroMin] = useState(20);
+const [pomodoroMin, setPomodoroMin] = useState(pomodoroDuration || 20);
 const [shortBreakMin, setShortBreakMin] = useState(5);
 const [longBreakMin, setLongBreakMin] = useState(10);
 

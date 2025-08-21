@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 
 
-export default function PlayPomodoro({ onPlay, onPause, setFormattedTime, onStop, alarmSound }) {
+export default function PlayPomodoro({ onPlay, onPause, setFormattedTime, onStop, alarmSound, initialMinutes }) {
   //constates para manejar el estado del tiempo
-const [timeLeft, setTimeLeft] = useState(5);
+const [timeLeft, setTimeLeft] = useState(0);
 const [isRunning, setIsRunning] = useState(false);
 const [selectedSound, setSelectedSound] = useState("sound1");
 
@@ -23,6 +23,7 @@ const handlePlay = () => {
 const handlePause = () => {
   setIsRunning(false);
 };
+
 
 //constantes para manejo de tiempo en minutos ys egundos
 const minutes = Math.floor(timeLeft / 60);
@@ -94,7 +95,15 @@ if (prev <= 1) {
     console.warn("No hay alarma configurada o el audio no está listo.");
   }
 
-  setTimeLeft(5); // ⏪ Reiniciar el timer a su valor original
+  // Reset timer to initialMinutes value, parsed safely
+  const parsed = parseInt(initialMinutes, 10);
+  const resetTime = isNaN(parsed) ? 0 : parsed * 60;
+  setTimeLeft(resetTime);
+  // Recalculate and set formatted time after resetting timeLeft
+  const minutes = Math.floor(resetTime / 60);
+  const seconds = resetTime % 60;
+  const formatted = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  setFormattedTime(formatted);
 
   return 0;
 }
@@ -112,6 +121,18 @@ if (prev <= 1) {
   }
   return () => clearInterval(timer);
 }, [isRunning]);
+
+
+// Initialize timeLeft and formattedTime when initialMinutes changes
+useEffect(() => {
+  const parsed = parseInt(initialMinutes, 10);
+  const duration = isNaN(parsed) ? 0 : parsed * 60;
+  setTimeLeft(duration);
+  const minutes = Math.floor(parsed);
+  const seconds = 0;
+  const formatted = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  setFormattedTime(formatted);
+}, [initialMinutes]);
 
   return (
     <button
