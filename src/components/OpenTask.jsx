@@ -68,7 +68,9 @@ export default function OpenTask() {
           </div>
           <div>
             <p className="text-gray-900 font-medium">Terminadas</p>
-            <span className="text-xl font-bold">0</span>
+            <span className="text-xl font-bold">
+              {tasks.filter((t) => t.completed).length}
+            </span>
           </div>
           <div>
             <p className="text-gray-900 font-medium">Total</p>
@@ -115,7 +117,7 @@ export default function OpenTask() {
                 className="flex-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
                 onClick={() => {
                   if (taskName.trim() !== "") {
-                    setTasks((prev) => [...prev, taskName.trim()]);
+                    setTasks((prev) => [...prev, { name: taskName.trim(), completed: false }]);
                     setTaskName("");
                     setShowTaskForm(false);
                   }
@@ -137,8 +139,19 @@ export default function OpenTask() {
             {tasks.map((task, index) => (
               <li key={index} className="bg-gray-100 px-4 py-2 rounded shadow flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <input type="radio" />
-                  <span>{task}</span>
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded-full"
+                    checked={task.completed}
+                    onChange={() => {
+                      const updatedTasks = [...tasks];
+                      updatedTasks[index].completed = !updatedTasks[index].completed;
+                      setTasks(updatedTasks);
+                    }}
+                  />
+                  <span className={`${task.completed ? "line-through text-gray-500" : ""}`}>
+                    {task.name}
+                  </span>
                 </div>
                 <div className="flex gap-2">
                   <button>
