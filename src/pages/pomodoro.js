@@ -1,7 +1,7 @@
 import { useBackground } from "@/components/BackgroundContext";
 import { useRouter } from "next/router";
 import { useEffect, useState, useRef } from "react";
-import SettingsMenu from "@/components/SettingsMenu";
+import SettingsMenuWithAudio from "@/components/SettingsMenuWithAudio";
 import OpenMusic from "@/components/OpenMusic";
 import PlayPomodoro from "@/components/PlayPomodoro";
 import OpenTask from "@/components/OpenTask";
@@ -83,6 +83,16 @@ export default function Pomodoro() {
   };
 const handleStop = () => {
   console.log("Pomodoro stopped (handleStop)");
+  if (window.pomodoroAlarm?.current && window.pomodoroAlarm.current.src) {
+    try {
+      window.pomodoroAlarm.current.currentTime = 0;
+      window.pomodoroAlarm.current.play();
+    } catch (error) {
+      console.error("No se pudo reproducir la alarma:", error);
+    }
+  } else {
+    console.warn("No hay alarma configurada o el audio no está listo.");
+  }
 };
 
   return (
@@ -100,7 +110,7 @@ const handleStop = () => {
         : {}
     }
   >  
- <SettingsMenu />
+ <SettingsMenuWithAudio audioRef={audioRef} />
         <p className="text-9xl font-bold text-white mb-6">{formattedTime}</p>
 
       <p className="text-lg text-gray-300 italic text-center max-w-md">{quote}</p>

@@ -2,17 +2,19 @@ import { useBackground } from "@/components/BackgroundContext";
 import { useState } from "react";
 import { useEffect, useRef } from "react";
 
-export default function SettingsMenu() {
+const SettingsMenu = ({ audioRef }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [alarmSound, setAlarmSound] = useState("sound1"); // sound1 | sound2 | mute
   const [alarmVolume, setAlarmVolume] = useState(50); // 0 - 100
   const { changeBackground } = useBackground();
-const audioRef = useRef(null);
+// If audioRef is not provided, create a local one
+const internalAudioRef = useRef(null);
+const effectiveAudioRef = audioRef || internalAudioRef;
 
 useEffect(() => {
   if (typeof window !== "undefined") {
-    window.pomodoroAlarm = audioRef;
+    window.pomodoroAlarm = effectiveAudioRef;
   }
 }, []);
   
@@ -32,11 +34,12 @@ useEffect(() => {
   };
 
 useEffect(() => {
-  if (!audioRef.current) return;
+  if (!effectiveAudioRef.current) return;
 
   if (alarmSound === "mute") {
-    audioRef.current.pause();
-    audioRef.current.src = ""; // importante: limpiar el src
+    effectiveAudioRef.current.pause();
+    effectiveAudioRef.current.src = "";
+    window.pomodoroAlarm = null;
     return;
   }
 
@@ -45,23 +48,23 @@ useEffect(() => {
       ? "/sounds/sonidouno.mp3"
       : "/sounds/sonidodos.mp3";
 
-  // Asignar el nuevo sonido
-  audioRef.current.src = soundPath;
+  effectiveAudioRef.current.src = soundPath;
+  effectiveAudioRef.current.load();
+  effectiveAudioRef.current.volume = alarmVolume / 100;
 
-  // Cargar y reproducir una vez cargado
-  audioRef.current.load(); // fuerza la carga del nuevo src
-  audioRef.current.volume = alarmVolume / 100;
+  // Actualizar referencia global
+  window.pomodoroAlarm = effectiveAudioRef;
 
-  // Esperar a que esté listo antes de reproducir
-  audioRef.current
-    .play()
-    .catch((err) => console.error("Error al reproducir audio:", err));
-}, [alarmSound]);
+  // 🔊 Reproducir el sonido seleccionado
+  effectiveAudioRef.current.play().catch((err) =>
+    console.error("Error al reproducir sonido seleccionado:", err)
+  );
+}, [alarmSound, effectiveAudioRef.current]);
 
 // Control independiente del volumen
 useEffect(() => {
-  if (audioRef.current) {
-    audioRef.current.volume = alarmVolume / 100;
+  if (effectiveAudioRef.current) {
+    effectiveAudioRef.current.volume = alarmVolume / 100;
   }
 }, [alarmVolume]);
 
@@ -259,7 +262,7 @@ const [autoBreaks, setAutoBreaks] = useState(false);
     </div>
 
     {/* Audio */}
-    <audio ref={audioRef} hidden />
+    <audio ref={effectiveAudioRef} hidden />
   </>
 )}
 
@@ -562,3 +565,5 @@ const [autoBreaks, setAutoBreaks] = useState(false);
     </div>
   );
 }
+
+export default SettingsMenu;
