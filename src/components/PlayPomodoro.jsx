@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 
 export default function PlayPomodoro({ onPlay, onPause, setFormattedTime, onStop }) {
   //constates para manejar el estado del tiempo
-const [timeLeft, setTimeLeft] = useState(1 * 60); // 25 minutos en segundos
+const [timeLeft, setTimeLeft] = useState(10);
 const [isRunning, setIsRunning] = useState(false);
 
 //constantes para manejo de botones

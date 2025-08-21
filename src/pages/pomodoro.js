@@ -1,7 +1,7 @@
 import { useBackground } from "@/components/BackgroundContext";
 import { useRouter } from "next/router";
 import { useEffect, useState, useRef } from "react";
-import SettingsMenu from "@/components/SettingsMenu";
+import SettingsMenuWithAudio from "@/components/SettingsMenuWithAudio";
 import OpenMusic from "@/components/OpenMusic";
 import PlayPomodoro from "@/components/PlayPomodoro";
 import OpenTask from "@/components/OpenTask";
@@ -110,7 +110,7 @@ const handleStop = () => {
         : {}
     }
   >  
- <SettingsMenu audioRef={audioRef} />
+ <SettingsMenuWithAudio audioRef={audioRef} />
         <p className="text-9xl font-bold text-white mb-6">{formattedTime}</p>
 
       <p className="text-lg text-gray-300 italic text-center max-w-md">{quote}</p>

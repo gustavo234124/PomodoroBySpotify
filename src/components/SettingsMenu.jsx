@@ -38,7 +38,8 @@ useEffect(() => {
 
   if (alarmSound === "mute") {
     effectiveAudioRef.current.pause();
-    effectiveAudioRef.current.src = ""; // importante: limpiar el src
+    effectiveAudioRef.current.src = "";
+    window.pomodoroAlarm = null;
     return;
   }
 
@@ -47,18 +48,18 @@ useEffect(() => {
       ? "/sounds/sonidouno.mp3"
       : "/sounds/sonidodos.mp3";
 
-  // Asignar el nuevo sonido
   effectiveAudioRef.current.src = soundPath;
-
-  // Cargar y reproducir una vez cargado
-  effectiveAudioRef.current.load(); // fuerza la carga del nuevo src
+  effectiveAudioRef.current.load();
   effectiveAudioRef.current.volume = alarmVolume / 100;
 
-  // Esperar a que esté listo antes de reproducir
-  effectiveAudioRef.current
-    .play()
-    .catch((err) => console.error("Error al reproducir audio:", err));
-}, [alarmSound]);
+  // Actualizar referencia global
+  window.pomodoroAlarm = effectiveAudioRef;
+
+  // 🔊 Reproducir el sonido seleccionado
+  effectiveAudioRef.current.play().catch((err) =>
+    console.error("Error al reproducir sonido seleccionado:", err)
+  );
+}, [alarmSound, effectiveAudioRef.current]);
 
 // Control independiente del volumen
 useEffect(() => {
