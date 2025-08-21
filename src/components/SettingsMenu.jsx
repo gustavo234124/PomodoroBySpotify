@@ -17,6 +17,16 @@ useEffect(() => {
     window.pomodoroAlarm = effectiveAudioRef;
   }
 }, []);
+
+// Load saved alarm sound from localStorage on mount
+useEffect(() => {
+  if (typeof window !== "undefined") {
+    const storedAlarm = localStorage.getItem("selected-alarm");
+    if (storedAlarm) {
+      setAlarmSound(storedAlarm);
+    }
+  }
+}, []);
   
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -48,18 +58,17 @@ useEffect(() => {
       ? "/sounds/sonidouno.mp3"
       : "/sounds/sonidodos.mp3";
 
+  // Prepara el nuevo sonido
+  effectiveAudioRef.current.pause(); // detener si estaba sonando
   effectiveAudioRef.current.src = soundPath;
   effectiveAudioRef.current.load();
   effectiveAudioRef.current.volume = alarmVolume / 100;
 
-  // Actualizar referencia global
+  // Actualiza la referencia global
   window.pomodoroAlarm = effectiveAudioRef;
 
-  // 🔊 Reproducir el sonido seleccionado
-  effectiveAudioRef.current.play().catch((err) =>
-    console.error("Error al reproducir sonido seleccionado:", err)
-  );
-}, [alarmSound, effectiveAudioRef.current]);
+  // Ya no se reproduce aquí (esperamos al cronómetro)
+}, [alarmSound]);
 
 // Control independiente del volumen
 useEffect(() => {
@@ -213,36 +222,66 @@ const [autoBreaks, setAutoBreaks] = useState(false);
   <>
     {/* Botones de sonido */}
     <div className="flex justify-between gap-2 mb-4">
-      <button
-        className={`flex-1 py-2 rounded font-medium ${
-          alarmSound === "sound1"
-            ? "bg-green-600 text-white"
-            : "bg-gray-200 text-black"
-        }`}
-        onClick={() => setAlarmSound("sound1")}
-      >
-        Sonido 1
-      </button>
-      <button
-        className={`flex-1 py-2 rounded font-medium ${
-          alarmSound === "sound2"
-            ? "bg-green-600 text-white"
-            : "bg-gray-200 text-black"
-        }`}
-        onClick={() => setAlarmSound("sound2")}
-      >
-        Sonido 2
-      </button>
-      <button
-        className={`flex-1 py-2 rounded font-medium ${
-          alarmSound === "mute"
-            ? "bg-red-600 text-white"
-            : "bg-gray-200 text-black"
-        }`}
-        onClick={() => setAlarmSound("mute")}
-      >
-        Mutear
-      </button>
+    <button
+  className={`flex-1 py-2 rounded font-medium ${
+    alarmSound === "sound1"
+      ? "bg-green-600 text-white"
+      : "bg-gray-200 text-black"
+  }`}
+  onClick={() => {
+    setAlarmSound("sound1");
+    localStorage.setItem("selected-alarm", "sound1");
+    window.dispatchEvent(new Event("storage")); // 🔥 fuerza el evento
+    setTimeout(() => {
+      if (effectiveAudioRef.current) {
+        effectiveAudioRef.current.currentTime = 0;
+        effectiveAudioRef.current.play().catch((err) =>
+          console.error("Error al reproducir sonido:", err)
+        );
+      }
+    }, 100);
+  }}
+>
+  Sonido 1
+</button>
+
+<button
+  className={`flex-1 py-2 rounded font-medium ${
+    alarmSound === "sound2"
+      ? "bg-green-600 text-white"
+      : "bg-gray-200 text-black"
+  }`}
+  onClick={() => {
+    setAlarmSound("sound2");
+    localStorage.setItem("selected-alarm", "sound2");
+    window.dispatchEvent(new Event("storage")); // 🔥 fuerza el evento
+    setTimeout(() => {
+      if (effectiveAudioRef.current) {
+        effectiveAudioRef.current.currentTime = 0;
+        effectiveAudioRef.current.play().catch((err) =>
+          console.error("Error al reproducir sonido:", err)
+        );
+      }
+    }, 100);
+  }}
+>
+  Sonido 2
+</button>
+
+<button
+  className={`flex-1 py-2 rounded font-medium ${
+    alarmSound === "mute"
+      ? "bg-red-600 text-white"
+      : "bg-gray-200 text-black"
+  }`}
+  onClick={() => {
+    setAlarmSound("mute");
+    localStorage.setItem("selected-alarm", "mute");
+    window.dispatchEvent(new Event("storage")); // 🔥 fuerza el evento
+  }}
+>
+  Mutear
+</button>
     </div>
 
     {/* Control de volumen */}

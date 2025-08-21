@@ -1,7 +1,7 @@
 import { useBackground } from "@/components/BackgroundContext";
 import { useRouter } from "next/router";
 import { useEffect, useState, useRef } from "react";
-import SettingsMenuWithAudio from "@/components/SettingsMenuWithAudio";
+import SettingsMenu from "@/components/SettingsMenu";
 import OpenMusic from "@/components/OpenMusic";
 import PlayPomodoro from "@/components/PlayPomodoro";
 import OpenTask from "@/components/OpenTask";
@@ -18,6 +18,21 @@ export default function Pomodoro() {
   const [quote, setQuote] = useState("");
   const [showLogout, setShowLogout] = useState(false);
   const [formattedTime, setFormattedTime] = useState("01:00");
+  const [alarmSound, setAlarmSound] = useState("sound1");
+  const [alarmVolume, setAlarmVolume] = useState(50);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedAlarm = localStorage.getItem("selected-alarm");
+      if (storedAlarm) {
+        setAlarmSound(storedAlarm);
+        console.log("🎵 Alarma cargada al montar:", storedAlarm);
+      }
+      // Ensure selectedSound is loaded safely in browser
+      const selectedSound = localStorage.getItem("selected-alarm") || "sound1";
+      // You can use selectedSound here if needed
+    }
+  }, []);
 
   useEffect(() => {
     async function loadQuotes() {
@@ -61,10 +76,36 @@ export default function Pomodoro() {
 
   const audioRef = useRef(null);
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && audioRef.current) {
-      window.pomodoroAlarm = audioRef;
-    }
+useEffect(() => {
+    if (!audioRef.current) return;
+
+    const handleStorageChange = () => {
+      const selectedSound = window.localStorage.getItem("selected-alarm");
+      console.log("⏰ Alarma actualizada a:", selectedSound);
+      setAlarmSound(selectedSound || "sound1"); // 🟢 Actualiza el estado también
+      console.log("🔁 Estado de alarmSound actualizado a:", selectedSound);
+
+      const soundPath =
+        selectedSound === "sound2"
+          ? "/sounds/sonidodos.mp3"
+          : "/sounds/sonidouno.mp3";
+
+      if (audioRef.current) {
+        audioRef.current.src = soundPath;
+        audioRef.current.load();
+        window.pomodoroAlarm = audioRef; // Asegurar referencia global
+      }
+    };
+
+    // Al montar, cargar alarma
+    handleStorageChange();
+
+    // Escuchar cambios en el localStorage
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   
@@ -110,7 +151,7 @@ const handleStop = () => {
         : {}
     }
   >  
- <SettingsMenuWithAudio audioRef={audioRef} />
+ <SettingsMenu audioRef={audioRef} />
         <p className="text-9xl font-bold text-white mb-6">{formattedTime}</p>
 
       <p className="text-lg text-gray-300 italic text-center max-w-md">{quote}</p>
@@ -122,6 +163,8 @@ const handleStop = () => {
           onPlay={handlePlay}
           onPause={handlePause}
           onStop={handleStop} // <-- agrega esta línea
+            alarmSound={alarmSound}
+
         />        <OpenTask />
       </div>
 
