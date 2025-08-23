@@ -102,7 +102,7 @@ export default function OpenTask() {
           </div>
    
         {/* ... contenido de tus tareas  renovacion hoala que sirva ya... */}
-                {/* ...contenido de prueba para verificar funcionamiento de repositorio*/}
+                {/* ...contenido de prueba para verificar funcionamiento de repositorio onlind*/}
 
         {showTaskForm && (
           <div className="w-full max-w-sm mx-auto space-y-4 mt-4">
