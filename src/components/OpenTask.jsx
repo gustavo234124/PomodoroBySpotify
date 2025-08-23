@@ -101,7 +101,7 @@ export default function OpenTask() {
             </span>
           </div>
    
-        {/* ... contenido de tus tareas  renovacion pendiente... */}
+        {/* ... contenido de tus tareas  renovacion hoala que sirva ya... */}
         {showTaskForm && (
           <div className="w-full max-w-sm mx-auto space-y-4 mt-4">
             {/* Input arriba */}
