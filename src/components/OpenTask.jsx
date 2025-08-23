@@ -57,7 +57,7 @@ export default function OpenTask() {
         {/* Cerrar */}
         <button
           onClick={toggleModal}
-          className="absolute top-4 right-4 text-red-500 text-2xl font-bold"
+          className="absolute top-4 right-4 text-blue-500 text-2xl font-bold"
         >
           ×
         </button>
@@ -86,7 +86,7 @@ export default function OpenTask() {
             {/* Icono SVG */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6 text-green-600 shrink-0"
+              className="w-6 h-6 text-red-600 shrink-0"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
