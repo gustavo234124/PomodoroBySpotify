@@ -1,5 +1,6 @@
 // components/OpenTask.jsx
 import { useState } from "react";
+import confetti from 'canvas-confetti';
 
 export default function OpenTask() {
   const [isOpen, setIsOpen] = useState(false);
@@ -57,7 +58,7 @@ export default function OpenTask() {
         {/* Cerrar */}
         <button
           onClick={toggleModal}
-          className="absolute top-4 right-4 text-blue-500 text-2xl font-bold"
+          className="absolute top-4 right-4 text-red-500 text-2xl font-bold"
         >
           ×
         </button>
@@ -86,7 +87,7 @@ export default function OpenTask() {
             {/* Icono SVG */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="w-6 h-6 text-red-600 shrink-0"
+              className="w-6 h-6 text-green-600 shrink-0"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -102,6 +103,8 @@ export default function OpenTask() {
           </div>
    
         {/* ... contenido de tus tareas  renovacion hoala que sirva ya... */}
+                {/* ...contenido de prueba para verificar funcionamiento de repositorio onlind*/}
+
         {showTaskForm && (
           <div className="w-full max-w-sm mx-auto space-y-4 mt-4">
             {/* Input arriba */}
@@ -147,10 +150,19 @@ export default function OpenTask() {
                       className="w-5 h-5 rounded-full"
                       checked={task.completed}
                       onChange={() => {
-                        const updatedTasks = [...tasks];
-                        updatedTasks[index].completed = !updatedTasks[index].completed;
-                        setTasks(updatedTasks);
-                      }}
+  const updatedTasks = [...tasks];
+  updatedTasks[index].completed = !updatedTasks[index].completed;
+  setTasks(updatedTasks);
+
+  // Ejecutar confetti si la tarea AHORA está completada
+  if (updatedTasks[index].completed) {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+    });
+  }
+}}
                     />
                     {editIndex === index ? (
                       <input
