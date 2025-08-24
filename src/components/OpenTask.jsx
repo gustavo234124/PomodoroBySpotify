@@ -154,7 +154,7 @@ export default function OpenTask() {
   updatedTasks[index].completed = !updatedTasks[index].completed;
   setTasks(updatedTasks);
 
-  // Ejecutar confetti si la tarea AHORA está completada
+  // Ejecutar confetti si la tarea  está completada
   if (updatedTasks[index].completed) {
     confetti({
       particleCount: 100,

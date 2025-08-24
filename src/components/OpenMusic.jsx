@@ -36,7 +36,8 @@ export default function OpenMusic({ accessToken }) {
           rounded-t-xl shadow-lg z-50
           transition-transform duration-300 ease-in-out
           ${isOpen ? "translate-y-0" : "translate-y-full"}
-        `}
+        `
+      }
       >
         {/* Botón cerrar */}
         <button
@@ -48,40 +49,87 @@ export default function OpenMusic({ accessToken }) {
 
         <h2 className="text-xl font-bold mb-4">Opciones de música</h2>
 
-        {/* Botones siempre clickeables */}
-        <div className="flex gap-[10px]">
+        <div className="flex justify-center gap-4 mb-6">
           <button
             onClick={() => setSelectedOption("spotify")}
-            className={`flex-1 py-2 rounded text-white ${
+            className={`border-2 px-6 py-2 rounded-full font-bold ${
               selectedOption === "spotify"
-                ? "bg-green-500 hover:bg-green-600"
-                : "bg-gray-700 hover:bg-gray-800"
+                ? "bg-white text-black border-black"
+                : "bg-gray-200 text-gray-500 border-gray-400"
             }`}
           >
-            Música Spotify
+            Musica de Spotify
           </button>
           <button
             onClick={() => setSelectedOption("predeterminada")}
-            className={`flex-1 py-2 rounded text-white ${
+            className={`px-6 py-2 rounded-full font-bold ${
               selectedOption === "predeterminada"
-                ? "bg-green-500 hover:bg-green-600"
-                : "bg-gray-700 hover:bg-gray-800"
+                ? "bg-gray-700 text-white"
+                : "bg-gray-300 text-gray-600"
             }`}
           >
-            Música Predeterminada
+            Musica recomendada
           </button>
         </div>
 
-        {/* Texto que muestra la opción activa o necesidad de login */}
-        <p className="mt-4 text-center">
-          {selectedOption === "spotify" && !accessToken
-            ? "Necesitas iniciar sesión para reproducir Spotify"
-            : `Estás escuchando: ${
-                selectedOption === "spotify"
-                  ? "Música Spotify"
-                  : "Música Predeterminada"
-              }`}
-        </p>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {selectedOption === "predeterminada" ? (
+            <>
+              <div className="bg-red-600 rounded-2xl p-4 flex flex-col items-center">
+                <img src="/naturaleza.jpeg" alt="Naturaleza" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+                <span className="text-white font-bold">Naturaleza</span>
+              </div>
+              <div className="bg-purple-600 rounded-2xl p-4 flex flex-col items-center">
+                <img src="/instrumental.jpg" alt="Instrumental" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+                <span className="text-white font-bold">Instrumental</span>
+              </div>
+              <div className="bg-blue-600 rounded-2xl p-4 flex flex-col items-center">
+                <img src="/concentracion.jpeg" alt="Concentracion" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+                <span className="text-white font-bold">Concentracion</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-green-600 rounded-2xl p-4 flex flex-col items-center">
+                <img src="/musica/naturaleza.jpg" alt="Naturaleza" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+                <span className="text-white font-bold">Naturaleza</span>
+              </div>
+              <div className="bg-orange-500 rounded-2xl p-4 flex flex-col items-center">
+                <img src="/musica/instrumental.jpg" alt="Instrumental" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+                <span className="text-white font-bold">Instrumental</span>
+              </div>
+              <div className="bg-amber-800 rounded-2xl p-4 flex flex-col items-center">
+                <img src="/musica/concentracion.jpg" alt="Concentracion" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+                <span className="text-white font-bold">Concentracion</span>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="bg-yellow-600 p-4 rounded-3xl flex gap-4">
+          <img src="/musica/concentracion.jpg" alt="Album" className="w-48 h-48 object-cover rounded-3xl" />
+          <div className="bg-gray-100 rounded-3xl p-6 flex-1 flex flex-col justify-between">
+            <ul className="text-white font-bold mb-4">
+              <li className="flex justify-between"><span>Cancion uno</span><span>3:42</span></li>
+              <li className="flex justify-between"><span>Cancion dos</span><span>3:42</span></li>
+              <li className="flex justify-between"><span>Cancion tres</span><span>3:42</span></li>
+              <li className="flex justify-between"><span>Cancion cuatro</span><span>3:42</span></li>
+              <li className="flex justify-between"><span>Cancion cinco</span><span>3:42</span></li>
+            </ul>
+            <div>
+              <div className="h-2 bg-gray-400 rounded-full mb-4 relative">
+                <div className="w-2/3 h-full bg-blue-600 rounded-full absolute top-0 left-0" />
+                <div className="w-4 h-4 bg-blue-600 rounded-full absolute top-[-4px] left-[66%]" />
+              </div>
+              <div className="flex justify-around items-center text-black">
+                <button>🔈</button>
+                <button>⏮️</button>
+                <button className="text-3xl">▶️</button>
+                <button>⏭️</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
