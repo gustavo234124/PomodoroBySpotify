@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import { albumSongs } from "../data/songs.js";
 export default function OpenMusic({ accessToken }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState("predeterminada");
@@ -8,6 +8,7 @@ export default function OpenMusic({ accessToken }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const toggleModal = () => setIsOpen(!isOpen);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  
 
   return (
     <>
@@ -141,12 +142,13 @@ export default function OpenMusic({ accessToken }) {
           />
           <div className="bg-gray-100 rounded-3xl p-4 sm:p-6 flex-1 flex flex-col justify-between mt-2 sm:mt-0">
             <ul className="text-black font-bold mb-4">
-              <li className="flex justify-between"><span>Cancion uno</span><span>3:42</span></li>
-              <li className="flex justify-between"><span>Cancion dos</span><span>3:42</span></li>
-              <li className="flex justify-between"><span>Cancion tres</span><span>3:42</span></li>
-              <li className="flex justify-between"><span>Cancion cuatro</span><span>3:42</span></li>
-              <li className="flex justify-between"><span>Cancion cinco</span><span>3:42</span></li>
-            </ul>
+  {albumSongs[selectedAlbum]?.map((song, index) => (
+    <li key={index} className="flex justify-between">
+      <span>{song.name}</span>
+      <span>{song.duration}</span>
+    </li>
+  ))}
+</ul>
             <div>
               <div className="h-2 bg-gray-400 rounded-full mb-4 relative">
                 <div className="w-2/3 h-full bg-blue-600 rounded-full absolute top-0 left-0" />
