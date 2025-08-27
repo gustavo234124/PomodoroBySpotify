@@ -3,6 +3,8 @@ import { useState } from "react";
 export default function OpenMusic({ accessToken }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState("predeterminada");
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
+  const [selectedAlbum, setSelectedAlbum] = useState("naturaleza");
   const toggleModal = () => setIsOpen(!isOpen);
 
   return (
@@ -72,43 +74,70 @@ export default function OpenMusic({ accessToken }) {
           </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="hidden sm:grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
           {selectedOption === "predeterminada" ? (
             <>
-              <div className="bg-red-600 rounded-2xl p-4 flex flex-col items-center">
-                <img src="/naturaleza.jpeg" alt="Naturaleza" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+              <div
+                className="bg-red-600 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
+                onClick={() => setSelectedAlbum("naturaleza")}
+              >
+                <img src="/naturaleza.webp" alt="Naturaleza" className="rounded-2xl w-24 h-24 object-cover mb-2" />
                 <span className="text-white font-bold">Naturaleza</span>
               </div>
-              <div className="bg-purple-600 rounded-2xl p-4 flex flex-col items-center">
-                <img src="/instrumental.jpg" alt="Instrumental" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+              <div
+                className="bg-purple-600 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
+                onClick={() => setSelectedAlbum("instrumental")}
+              >
+                <img src="/instrumental.webp" alt="Instrumental" className="rounded-2xl w-24 h-24 object-cover mb-2" />
                 <span className="text-white font-bold">Instrumental</span>
               </div>
-              <div className="bg-blue-600 rounded-2xl p-4 flex flex-col items-center">
-                <img src="/concentracion.jpeg" alt="Concentracion" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+              <div
+                className="bg-blue-600 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
+                onClick={() => setSelectedAlbum("concentracion")}
+              >
+                <img src="/concentracion.webp" alt="Concentracion" className="rounded-2xl w-24 h-24 object-cover mb-2" />
                 <span className="text-white font-bold">Concentracion</span>
               </div>
             </>
           ) : (
             <>
-              <div className="bg-green-600 rounded-2xl p-4 flex flex-col items-center">
-                <img src="/musica/naturaleza.jpg" alt="Naturaleza" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+              <div
+                className="bg-green-600 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
+                onClick={() => setSelectedAlbum("naturaleza")}
+              >
+                <img src="/musica/naturaleza.webp" alt="Naturaleza" className="rounded-2xl w-24 h-24 object-cover mb-2" />
                 <span className="text-white font-bold">Naturaleza</span>
               </div>
-              <div className="bg-orange-500 rounded-2xl p-4 flex flex-col items-center">
-                <img src="/musica/instrumental.jpg" alt="Instrumental" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+              <div
+                className="bg-orange-500 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
+                onClick={() => setSelectedAlbum("instrumental")}
+              >
+                <img src="/instrumental.webp" alt="Instrumental" className="rounded-2xl w-24 h-24 object-cover mb-2" />
                 <span className="text-white font-bold">Instrumental</span>
               </div>
-              <div className="bg-amber-800 rounded-2xl p-4 flex flex-col items-center">
-                <img src="/musica/concentracion.jpg" alt="Concentracion" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+              <div
+                className="bg-amber-800 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
+                onClick={() => setSelectedAlbum("concentracion")}
+              >
+                <img src="/concentracion.webp" alt="Concentracion" className="rounded-2xl w-24 h-24 object-cover mb-2" />
                 <span className="text-white font-bold">Concentracion</span>
               </div>
             </>
           )}
         </div>
 
-        <div className="bg-yellow-600 p-4 rounded-3xl flex gap-4">
-          <img src="/musica/concentracion.jpg" alt="Album" className="w-48 h-48 object-cover rounded-3xl" />
-          <div className="bg-gray-100 rounded-3xl p-6 flex-1 flex flex-col justify-between">
+        <div className="bg-yellow-600 p-4 rounded-3xl flex flex-col sm:flex-row gap-4">
+          <img
+            src={
+              selectedOption === "predeterminada"
+                ? `/${selectedAlbum}.webp`
+                : `/${selectedAlbum}.webp`
+            }
+            alt="Album"
+            className="w-full sm:max-w-[200px] h-auto object-cover rounded-3xl mx-auto cursor-pointer"
+            onClick={() => setIsSubModalOpen(true)}
+          />
+          <div className="bg-gray-100 rounded-3xl p-4 sm:p-6 flex-1 flex flex-col justify-between mt-2 sm:mt-0">
             <ul className="text-white font-bold mb-4">
               <li className="flex justify-between"><span>Cancion uno</span><span>3:42</span></li>
               <li className="flex justify-between"><span>Cancion dos</span><span>3:42</span></li>
@@ -131,6 +160,48 @@ export default function OpenMusic({ accessToken }) {
           </div>
         </div>
       </div>
+
+      {/* Submodal solo para móviles */}
+      {isSubModalOpen && (
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white p-4 overflow-y-auto h-[95vh] rounded-t-xl">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold">Explorar álbumes</h3>
+            <button onClick={() => setIsSubModalOpen(false)} className="text-red-500 text-xl font-bold">×</button>
+          </div>
+          <div className="flex flex-col gap-4">
+            <div
+              className="bg-purple-500 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
+              onClick={() => {
+                setSelectedAlbum("instrumental");
+                setIsSubModalOpen(false);
+              }}
+            >
+              <img src="/instrumental.webp" alt="Instrumental" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+              <span className="text-white font-bold">Instrumental</span>
+            </div>
+            <div
+              className="bg-red-500 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
+              onClick={() => {
+                setSelectedAlbum("naturaleza");
+                setIsSubModalOpen(false);
+              }}
+            >
+              <img src="/naturaleza.webp" alt="Naturaleza" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+              <span className="text-white font-bold">Naturaleza</span>
+            </div>
+            <div
+              className="bg-blue-500 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
+              onClick={() => {
+                setSelectedAlbum("concentracion");
+                setIsSubModalOpen(false);
+              }}
+            >
+              <img src="/concentracion.webp" alt="Concentracion" className="rounded-2xl w-24 h-24 object-cover mb-2" />
+              <span className="text-white font-bold">Concentracion</span>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
