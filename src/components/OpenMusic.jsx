@@ -1,5 +1,29 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { albumSongs } from "../data/songs.js";
+
+function SongItem({ song }) {
+  const [duration, setDuration] = useState(null);
+
+  useEffect(() => {
+    const audio = new Audio(song.file);
+    audio.addEventListener("loadedmetadata", () => {
+      const minutes = Math.floor(audio.duration / 60);
+      const seconds = Math.floor(audio.duration % 60)
+        .toString()
+        .padStart(2, "0");
+      setDuration(`${minutes}:${seconds}`);
+    });
+  }, [song.file]);
+
+  return (
+    <li className="flex justify-between hover:bg-gray-200 rounded-xl px-2 py-1 transition-colors">
+      <span>{song.name}</span>
+      <span>{duration || "..."}</span>
+    </li>
+  );
+}
+
 export default function OpenMusic({ accessToken }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState("predeterminada");
@@ -8,6 +32,7 @@ export default function OpenMusic({ accessToken }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const toggleModal = () => setIsOpen(!isOpen);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  
   
 
   return (
@@ -143,10 +168,7 @@ export default function OpenMusic({ accessToken }) {
           <div className="bg-gray-100 rounded-3xl p-4 sm:p-6 flex-1 flex flex-col justify-between mt-2 sm:mt-0">
             <ul className="text-black font-bold mb-4">
   {albumSongs[selectedAlbum]?.map((song, index) => (
-    <li key={index} className="flex justify-between">
-      <span>{song.name}</span>
-      <span>{song.duration}</span>
-    </li>
+    <SongItem key={index} song={song} />
   ))}
 </ul>
             <div>
