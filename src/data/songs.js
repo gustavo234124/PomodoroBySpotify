@@ -1,28 +1,23 @@
-// src/data/songs.js
-
 export const albumSongs = {
   naturaleza: [
-       { name: "Mantra del viento", file: "/public/sounds/naturaleza/mantradelviento.mp3", duration: "3:22" },
-    { name: "Cuerdas del bosque", file: "/public/sounds/naturaleza/cuerdasdelbosque.mp3", duration: "3:50" },
-    { name: "Brisa serenata", file: "/public/sounds/naturaleza/BrisaSerenata.mp3", duration: "3:50" },
-    { name: "Amanecer silvestre", file: "/public/sounds/naturaleza/amanecerSilvestre.mp3", duration: "3:50" },
-    { name: "Ecos de agua", file: "/public/sounds/naturaleza/ecosdeagua.mp3", duration: "3:50" },
+    { name: "Mantra del viento", file: "/sounds/naturaleza/mantradelviento.mp3" },
+    { name: "Cuerdas del bosque", file: "/sounds/naturaleza/cuerdasdelbosque.mp3" },
+    { name: "Brisa serenata", file: "/sounds/naturaleza/BrisaSerenata.mp3" },
+    { name: "Amanecer silvestre", file: "/sounds/naturaleza/amanecerSilvestre.mp3" },
+    { name: "Ecos de agua", file: "/sounds/naturaleza/ecosdeagua.mp3" },
   ],
   concentracion: [
-     { name: "Zona de paz", file: "/public/sounds/concentracion/Zonadepaz.mp3", duration: "3:42" },
-    { name: "Mente Clara", file: "/public/sounds/concentracion/menteClara.mp3", duration: "4:15" },
-    { name: "Silencio interno", file: "/public/sounds/concentracion/silencioInterno.mp3", duration: "2:58" },
-    { name: "Circuitos mentales", file: "/public/sounds/concentracion/circuitosMentales.mp3", duration: "2:58" },
-    { name: "Pulso constante", file: "/public/sounds/concentracion/pulsoConstante.mp3", duration: "2:58" },
-    // ...
+    { name: "Zona de paz", file: "/sounds/concentracion/Zonadepaz.mp3" },
+    { name: "Mente Clara", file: "/sounds/concentracion/menteClara.mp3" },
+    { name: "Silencio interno", file: "/sounds/concentracion/silencioInterno.mp3" },
+    { name: "Circuitos mentales", file: "/sounds/concentracion/circuitosMentales.mp3" },
+    { name: "Pulso constante", file: "/sounds/concentracion/pulsoConstante.mp3" },
   ],
   instrumental: [
-    { name: "Ecos de calma", file: "/public/sounds/instrumental/EcosdeCalma.mp3", duration: "3:40" },
-    { name: "Pulsos de acero", file: "/public/sounds/instrumental/Pulsosdeacero.mp3", duration: "3:40" },
-    { name: "Tarde serena", file: "/public/sounds/instrumental/Cuerdasdelatardecer.mp3", duration: "3:40" },
-    { name: "Ritmo viajero", file: "/public/sounds/instrumental/ritmoviajero.mp3", duration: "3:40" },
-    { name: "Luz entre notas", file: "/public/sounds/instrumental/luzentrenotas.mp3", duration: "3:40" },
-
-    // ...
+    { name: "Ecos de calma", file: "/sounds/instrumental/EcosdeCalma.mp3" },
+    { name: "Pulsos de acero", file: "/sounds/instrumental/Pulsosdeacero.mp3" },
+    { name: "Tarde serena", file: "/sounds/instrumental/Cuerdasdelatardecer.mp3" },
+    { name: "Ritmo viajero", file: "/sounds/instrumental/ritmoviajero.mp3" },
+    { name: "Luz entre notas", file: "/sounds/instrumental/luzentrenotas.mp3" },
   ]
 };
