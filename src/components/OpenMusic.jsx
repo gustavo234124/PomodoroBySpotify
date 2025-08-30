@@ -44,6 +44,24 @@ export default function OpenMusic({ accessToken }) {
 
   // Ref for audio element and progress state
   const audioRef = useRef(null);
+
+  // Avanzar automáticamente a la siguiente canción cuando termina la actual (loop)
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => {
+      const currentAlbumSongs = albumSongs[selectedAlbum];
+      const nextIndex = (currentSongIndex + 1) % currentAlbumSongs.length;
+      setCurrentSongIndex(nextIndex);
+      setIsPlaying(true); // Ensures autoplay of next song
+    };
+
+    audio.addEventListener("ended", handleEnded);
+    return () => {
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, [selectedAlbum, currentSongIndex]);
   const [progress, setProgress] = useState(0);
 
   // Volume state and handler
@@ -85,14 +103,26 @@ export default function OpenMusic({ accessToken }) {
   // Play song when index or album changes (reuse <audio> element)
   useEffect(() => {
     if (!currentSong) return;
+
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = currentSong.file;
       audioRef.current.volume = volume;
-      // Do not autoplay when album/song changes
-      setIsPlaying(false);
+      if (isPlaying) {
+        audioRef.current.play();
+      }
     }
   }, [currentSongIndex, selectedAlbum]);
+
+  // Ensure audio plays/pauses explicitly when isPlaying or song changes
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.play();
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying, currentSongIndex]);
 
   // Handlers for next/prev (circular navigation)
   const handlePrev = () => {
@@ -325,15 +355,16 @@ export default function OpenMusic({ accessToken }) {
                     key={index}
                     song={song}
                     isSelected={currentSongIndex === index}
-                    onSelect={() => {
-                      // Pause any playing audio and prepare new audio object
-                      if (audioRef.current) {
-                        audioRef.current.pause();
-                        audioRef.current = new Audio(song.file);
-                      }
-                      setCurrentSongIndex(index);
-                      setIsPlaying(false);
-                    }}
+                      onSelect={() => {
+                        if (audioRef.current) {
+                          audioRef.current.pause();
+                          audioRef.current.src = song.file;
+                          audioRef.current.volume = volume;
+                          audioRef.current.play();
+                        }
+                        setCurrentSongIndex(index);
+                        setIsPlaying(true);
+                      }}
                   />
                 ))}
               </ul>
@@ -427,7 +458,7 @@ export default function OpenMusic({ accessToken }) {
                   src={currentSong.file}
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
-                  onEnded={handleNext}
+                  // Remove onEnded, handled by effect above
                 />
               )}
             </div>
