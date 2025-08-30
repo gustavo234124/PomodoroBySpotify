@@ -38,18 +38,41 @@ export default function OpenMusic({ accessToken }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const toggleModal = () => setIsOpen(!isOpen);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [selectedSong, setSelectedSong] = useState(null);
-  // Estado para la instancia de audio
+  // Song navigation states
+  const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [audio, setAudio] = useState(null);
 
   // Ref for audio element and progress state
   const audioRef = useRef(null);
+
+  // Avanzar automáticamente a la siguiente canción cuando termina la actual (loop)
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => {
+      const currentAlbumSongs = albumSongs[selectedAlbum];
+      const nextIndex = (currentSongIndex + 1) % currentAlbumSongs.length;
+      setCurrentSongIndex(nextIndex);
+      setIsPlaying(true); // Ensures autoplay of next song
+    };
+
+    audio.addEventListener("ended", handleEnded);
+    return () => {
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, [selectedAlbum, currentSongIndex]);
   const [progress, setProgress] = useState(0);
 
   // Volume state and handler
   const [volume, setVolume] = useState(1);
   const [showVolume, setShowVolume] = useState(false);
 
+  // Helper to get the current song object
+  const currentSong =
+    albumSongs[selectedAlbum] && albumSongs[selectedAlbum][currentSongIndex];
+
+  // Volume handler
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value);
     setVolume(newVolume);
@@ -70,7 +93,50 @@ export default function OpenMusic({ accessToken }) {
     return () => {
       audioEl.removeEventListener("timeupdate", updateProgress);
     };
-  }, [selectedSong]);
+  }, [currentSong]);
+
+  // When album changes, reset song index to 0
+  useEffect(() => {
+    setCurrentSongIndex(0);
+  }, [selectedAlbum]);
+
+  // Play song when index or album changes (reuse <audio> element)
+  useEffect(() => {
+    if (!currentSong) return;
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = currentSong.file;
+      audioRef.current.volume = volume;
+      if (isPlaying) {
+        audioRef.current.play();
+      }
+    }
+  }, [currentSongIndex, selectedAlbum]);
+
+  // Ensure audio plays/pauses explicitly when isPlaying or song changes
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.play();
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying, currentSongIndex]);
+
+  // Handlers for next/prev (circular navigation)
+  const handlePrev = () => {
+    const songs = albumSongs[selectedAlbum];
+    setCurrentSongIndex((prevIndex) =>
+      prevIndex === 0 ? songs.length - 1 : prevIndex - 1
+    );
+  };
+  const handleNext = () => {
+    const songs = albumSongs[selectedAlbum];
+    setCurrentSongIndex((prevIndex) =>
+      prevIndex === songs.length - 1 ? 0 : prevIndex + 1
+    );
+  };
 
   return (
     <>
@@ -288,15 +354,17 @@ export default function OpenMusic({ accessToken }) {
                   <SongItem
                     key={index}
                     song={song}
-                    isSelected={selectedSong?.file === song.file}
-                    onSelect={(s) => {
-                      if (audioRef.current) {
-                        audioRef.current.pause();
-                        audioRef.current.currentTime = 0;
-                      }
-                      setSelectedSong(s);
-                      setIsPlaying(true);
-                    }}
+                    isSelected={currentSongIndex === index}
+                      onSelect={() => {
+                        if (audioRef.current) {
+                          audioRef.current.pause();
+                          audioRef.current.src = song.file;
+                          audioRef.current.volume = volume;
+                          audioRef.current.play();
+                        }
+                        setCurrentSongIndex(index);
+                        setIsPlaying(true);
+                      }}
                   />
                 ))}
               </ul>
@@ -321,13 +389,7 @@ export default function OpenMusic({ accessToken }) {
                         max="1"
                         step="0.01"
                         value={volume}
-                        onChange={(e) => {
-                          const newVolume = parseFloat(e.target.value);
-                          setVolume(newVolume);
-                          if (audioRef.current) {
-                            audioRef.current.volume = newVolume;
-                          }
-                        }}
+                        onChange={handleVolumeChange}
                         className="absolute bottom-[40px] h-24 w-2 appearance-none bg-gray-300 rounded-lg"
                         style={{
                           writingMode: 'vertical-lr',
@@ -348,16 +410,9 @@ export default function OpenMusic({ accessToken }) {
                       </svg>
                     </button>
                   </div>
-                  <button>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 37 38"
-                      fill="none"
-                      className="w-6 h-6 sm:w-8 sm:h-8 hover:bg-green-400"
-                    >
-                      <path d="M1.56278 0.00024128C1.97718 0.00024128 2.37461 0.16486 2.66763 0.457886C2.96066 0.750911 3.12528 1.14834 3.12528 1.56274L3.12528 35.9377C3.12528 36.3521 2.96066 36.7496 2.66763 37.0426C2.37461 37.3356 1.97718 37.5002 1.56278 37.5002C1.14838 37.5002 0.750952 37.3356 0.457927 37.0426C0.164901 36.7496 0.000282104 36.3521 0.000282104 35.9377L0.000282104 1.56274C-0.00252055 1.35678 0.0359805 1.15233 0.113511 0.961497C0.191042 0.77066 0.306026 0.597297 0.45168 0.451643C0.597333 0.30599 0.770701 0.191001 0.961538 0.11347C1.15238 0.0359396 1.35682 -0.00256137 1.56278 0.00024128ZM8.64612 19.9773C8.62739 19.2513 8.77761 18.5309 9.08492 17.8729C9.39223 17.2149 9.84823 16.6373 10.4169 16.1857L29.3961 1.41483C30.0753 0.900243 30.8815 0.581492 31.7294 0.498159H32.2086C32.9299 0.480104 33.6448 0.637383 34.2919 0.956491C35.0625 1.33254 35.7121 1.91718 36.1669 2.64399C36.6199 3.3684 36.8582 4.20633 36.8544 5.06066V32.4565C36.8522 33.2781 36.6291 34.084 36.2086 34.7898C35.7752 35.4915 35.1644 36.0664 34.4378 36.4565C33.714 36.8477 32.8975 37.035 32.0756 36.9983C31.2537 36.9616 30.4572 36.7023 29.7711 36.2482L10.7711 23.5815C10.1669 23.1836 9.66695 22.6482 9.31278 22.019C8.93894 21.3976 8.71099 20.6996 8.64612 19.9773Z" fill="black"/>
-                    </svg>
-                  </button>
+                  <button onClick={handlePrev}><svg xmlns="http://www.w3.org/2000/svg" width="37" height="38" viewBox="0 0 37 38" fill="none">
+  <path d="M1.56278 0.000240326C1.97718 0.000240326 2.37461 0.16486 2.66763 0.457886C2.96066 0.750912 3.12528 1.14834 3.12528 1.56274L3.12528 35.9377C3.12528 36.3521 2.96066 36.7496 2.66763 37.0426C2.37461 37.3356 1.97718 37.5002 1.56278 37.5002C1.14838 37.5002 0.750954 37.3356 0.457928 37.0426C0.164902 36.7496 0.000282288 36.3521 0.000282288 35.9377L0.000282288 1.56274C-0.00252151 1.35677 0.0359802 1.15234 0.11351 0.961498C0.19104 0.77066 0.306026 0.597298 0.451679 0.451645C0.597332 0.305988 0.770702 0.191002 0.961536 0.113472C1.15237 0.0359383 1.35682 -0.00255966 1.56278 0.000240326ZM8.64612 19.9773C8.62739 19.2513 8.77761 18.5309 9.08492 17.8729C9.39223 17.2149 9.84823 16.6373 10.4169 16.1857L29.3961 1.41483C30.0753 0.900242 30.8815 0.581493 31.7294 0.498158H32.2086C32.9299 0.480106 33.6448 0.637383 34.2919 0.95649C35.0625 1.33254 35.7121 1.91718 36.1669 2.64399C36.6199 3.3684 36.8582 4.20633 36.8544 5.06066L36.8544 32.4565C36.8522 33.2781 36.6291 34.084 36.2086 34.7898C35.7752 35.4915 35.1644 36.0664 34.4378 36.4565C33.714 36.8477 32.8975 37.035 32.0756 36.9983C31.2537 36.9616 30.4572 36.7023 29.7711 36.2482L10.7711 23.5815C10.1669 23.1836 9.66695 22.6482 9.31278 22.019C8.93894 21.3976 8.71099 20.6996 8.64612 19.9773Z" fill="black"/>
+</svg></button>
                   <button
                     className="text-3xl"
                     onClick={() => {
@@ -367,7 +422,7 @@ export default function OpenMusic({ accessToken }) {
                         } else {
                           audioRef.current.play();
                         }
-                        setIsPlaying(!isPlaying);
+                        setIsPlaying(prev => !prev);
                       }
                     }}
                   >
@@ -391,30 +446,19 @@ export default function OpenMusic({ accessToken }) {
                       </svg>
                     )}
                   </button>
-                  <button>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 37 38"
-                      fill="none"
-                      className="w-6 h-6 sm:w-8 sm:h-8 hover:bg-green-400"
-                    >
-                      <path d="M35.2917 37.5C34.8773 37.5 34.4799 37.3354 34.1869 37.0424C33.8938 36.7493 33.7292 36.3519 33.7292 35.9375V1.5625C33.7292 1.1481 33.8938 0.750671 34.1869 0.457645C34.4799 0.16462 34.8773 0 35.2917 0C35.7061 0 36.1035 0.16462 36.3966 0.457645C36.6896 0.750671 36.8542 1.1481 36.8542 1.5625V35.9375C36.857 36.1435 36.8185 36.3479 36.741 36.5387C36.6635 36.7296 36.5485 36.9029 36.4028 37.0486C36.2572 37.1943 36.0838 37.3092 35.893 37.3868C35.7021 37.4643 35.4977 37.5028 35.2917 37.5ZM28.2084 17.5229C28.2271 18.2489 28.0769 18.9693 27.7696 19.6273C27.4623 20.2853 27.0063 20.8629 26.4375 21.3146L7.45838 36.0854C6.77921 36.6 5.97296 36.9188 5.12504 37.0021H4.64588C3.92458 37.0201 3.20967 36.8629 2.56254 36.5438C1.79201 36.1677 1.1424 35.5831 0.687544 34.8563C0.234631 34.1318 -0.0037423 33.2939 4.44236e-05 32.4396V5.04375C0.00229432 4.22215 0.225354 3.41625 0.645878 2.71042C1.07926 2.00876 1.6901 1.43385 2.41671 1.04375C3.14049 0.652522 3.95695 0.465253 4.77888 0.501947C5.60081 0.53864 6.39734 0.797917 7.08338 1.25208L26.0834 13.9188C26.6875 14.3167 27.1875 14.8521 27.5417 15.4813C27.9156 16.1026 28.1435 16.8007 28.2084 17.5229Z" fill="black"/>
-                    </svg>
-                  </button>
+                  <button onClick={handleNext}><svg xmlns="http://www.w3.org/2000/svg" width="37" height="38" viewBox="0 0 37 38" fill="none">
+  <path d="M35.2917 37.5C34.8773 37.5 34.4799 37.3354 34.1869 37.0424C33.8938 36.7493 33.7292 36.3519 33.7292 35.9375V1.5625C33.7292 1.1481 33.8938 0.750671 34.1869 0.457646C34.4799 0.16462 34.8773 0 35.2917 0C35.7061 0 36.1035 0.16462 36.3966 0.457646C36.6896 0.750671 36.8542 1.1481 36.8542 1.5625V35.9375C36.857 36.1435 36.8185 36.3479 36.741 36.5387C36.6635 36.7296 36.5485 36.9029 36.4028 37.0486C36.2572 37.1943 36.0838 37.3092 35.893 37.3868C35.7021 37.4643 35.4977 37.5028 35.2917 37.5ZM28.2084 17.5229C28.2271 18.2489 28.0769 18.9693 27.7696 19.6273C27.4623 20.2853 27.0063 20.8629 26.4375 21.3146L7.45838 36.0854C6.77921 36.6 5.97296 36.9188 5.12504 37.0021H4.64588C3.92458 37.0201 3.20967 36.8629 2.56254 36.5438C1.79201 36.1677 1.1424 35.5831 0.687544 34.8563C0.234631 34.1318 -0.0037423 33.2939 4.44236e-05 32.4396V5.04375C0.00229432 4.22215 0.225354 3.41625 0.645878 2.71042C1.07926 2.00876 1.6901 1.43385 2.41671 1.04375C3.14049 0.652522 3.95695 0.465253 4.77888 0.501947C5.60081 0.53864 6.39734 0.797917 7.08338 1.25208L26.0834 13.9188C26.6875 14.3167 27.1875 14.8521 27.5417 15.4813C27.9156 16.1026 28.1435 16.8007 28.2084 17.5229Z" fill="black"/>
+</svg></button>
                 </div>
               </div>
               {/* Hidden audio element for playback */}
-              {selectedSong && (
+              {currentSong && (
                 <audio
                   ref={audioRef}
-                  src={selectedSong.file}
-                  autoPlay
+                  src={currentSong.file}
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
-                  onEnded={() => {
-                    setIsPlaying(false);
-                    setProgress(0);
-                  }}
+                  // Remove onEnded, handled by effect above
                 />
               )}
             </div>
