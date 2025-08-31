@@ -40,23 +40,60 @@ export default function OpenMusic({ accessToken }) {
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   // Spotify playlists
-const [spotifyPlaylists, setSpotifyPlaylists] = useState([]);
+  const [spotifyPlaylists, setSpotifyPlaylists] = useState([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [playlistTracks, setPlaylistTracks] = useState([]);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
-useEffect(() => {
-  if (!accessToken) return;
-  async function fetchPlaylists() {
+  useEffect(() => {
+    if (!accessToken) return;
+    async function fetchPlaylists() {
+      try {
+        const res = await fetch("https://api.spotify.com/v1/me/playlists", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const data = await res.json();
+        setSpotifyPlaylists(data.items || []);
+      } catch (error) {
+        console.error("Error cargando playlists de Spotify:", error);
+      }
+    }
+    fetchPlaylists();
+  }, [accessToken]);
+
+  const fetchPlaylistTracks = async (playlistId) => {
     try {
-      const res = await fetch("https://api.spotify.com/v1/me/playlists", {
+      const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const data = await res.json();
-      setSpotifyPlaylists(data.items || []);
+      setPlaylistTracks(data.items.map(item => item.track));
     } catch (error) {
-      console.error("Error cargando playlists de Spotify:", error);
+      console.error("Error al obtener canciones:", error);
     }
-  }
-  fetchPlaylists();
-}, [accessToken]);
+  };
+
+  const handleSelectSpotifyPlaylist = (playlist) => {
+    setSelectedPlaylist(playlist);
+    fetchPlaylistTracks(playlist.id);
+  };
+
+  const handleSelectSpotifyTrack = (index) => {
+    setCurrentTrackIndex(index);
+    setIsPlaying(true);
+  };
+
+  const handlePrevTrack = () => {
+    setCurrentTrackIndex((prev) =>
+      prev === 0 ? playlistTracks.length - 1 : prev - 1
+    );
+  };
+
+  const handleNextTrack = () => {
+    setCurrentTrackIndex((prev) =>
+      prev === playlistTracks.length - 1 ? 0 : prev + 1
+    );
+  };
   // Song navigation states
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [audio, setAudio] = useState(null);
@@ -228,8 +265,38 @@ useEffect(() => {
           </button>
         </div>
 
+        {/* Spotify playlists carousel above album cards */}
+        {selectedOption === "spotify" && (
+          <div className="flex overflow-x-auto gap-4 pb-4 -mx-4 px-4">
+            {spotifyPlaylists.length === 0 ? (
+              <p className="text-white text-center col-span-full w-full">
+                No se encontraron playlists o aún se están cargando.
+              </p>
+            ) : (
+              spotifyPlaylists.map((playlist) => (
+                <div
+                  key={playlist.id}
+                  className="min-w-[140px] flex-shrink-0 bg-white rounded-xl overflow-hidden shadow hover:scale-105 transition cursor-pointer"
+                  onClick={() => handleSelectSpotifyPlaylist(playlist)}
+                >
+                  {playlist.images[0] && (
+                    <img
+                      src={playlist.images[0].url}
+                      alt={playlist.name}
+                      className="w-full h-24 object-cover"
+                    />
+                  )}
+                  <div className="p-2 text-sm font-bold truncate text-center text-black">
+                    {playlist.name}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
         <div className="hidden sm:grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-          {selectedOption === "predeterminada" ? (
+          {selectedOption === "predeterminada" && (
             <>
               <div
                 className="bg-red-600 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
@@ -253,70 +320,69 @@ useEffect(() => {
                 <span className="text-white font-bold">Concentracion</span>
               </div>
             </>
-          ) : (
-            <>
-              <div
-                className="bg-green-600 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
-                onClick={() => setSelectedAlbum("naturaleza")}
-              >
-                {selectedOption === "spotify" ? (
-                  <div className="w-24 h-24 mb-2" />
-                ) : (
-                  <img src="/musica/naturaleza.webp" alt="Naturaleza" className="rounded-2xl w-24 h-24 object-cover mb-2" />
-                )}
-              </div>
-              <div
-                className="bg-orange-500 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
-                onClick={() => setSelectedAlbum("instrumental")}
-              >
-                {selectedOption === "spotify" ? (
-                  <div className="w-24 h-24 mb-2" />
-                ) : (
-                  <img src="/instrumental.webp" alt="Instrumental" className="rounded-2xl w-24 h-24 object-cover mb-2" />
-                )}
-              </div>
-              <div
-                className="bg-amber-800 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
-                onClick={() => setSelectedAlbum("concentracion")}
-              >
-                {selectedOption === "spotify" ? (
-                  <div className="w-24 h-24 mb-2" />
-                ) : (
-                  <img src="/concentracion.webp" alt="Concentracion" className="rounded-2xl w-24 h-24 object-cover mb-2" />
-                )}
-              </div>
-            </>
           )}
         </div>
 
-      {selectedOption === "spotify" ? (
-        <div className="bg-yellow-600 p-4 rounded-3xl grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {spotifyPlaylists.length === 0 ? (
-            <p className="text-white text-center col-span-full">
-              No se encontraron playlists o aún se están cargando.
-            </p>
-          ) : (
-            spotifyPlaylists.map((playlist) => (
-              <div
-                key={playlist.id}
-                className="bg-white rounded-xl overflow-hidden shadow hover:scale-105 transition cursor-pointer"
-                onClick={() => console.log("Seleccionada:", playlist.name)}
-              >
-                {playlist.images[0] && (
-                  <img
-                    src={playlist.images[0].url}
-                    alt={playlist.name}
-                    className="w-full h-24 object-cover"
+        {selectedOption === "spotify" && (
+          <div className="bg-yellow-500 rounded-3xl p-4 flex flex-col sm:flex-row gap-4">
+            {/* Portada de playlist seleccionada */}
+            <img
+              src={
+                selectedPlaylist?.images?.[0]?.url || "/default-playlist.jpg"
+              }
+              alt={selectedPlaylist?.name || "Playlist"}
+              className="w-[220px] h-[110px] sm:max-w-[200px] sm:h-auto object-cover rounded-3xl mx-auto cursor-pointer"
+            />
+            {/* Contenido de la playlist seleccionada */}
+            <div className="bg-white rounded-3xl p-4 sm:p-6 flex-1 flex flex-col justify-between mt-2 sm:mt-0">
+              <div className="max-h-[250px] overflow-y-auto pr-1">
+                <ul className="text-black font-bold mb-4">
+                  {playlistTracks.map((track, index) => (
+                    <li
+                      key={track.id}
+                      className={`flex justify-between p-2 rounded cursor-pointer transition-colors ${
+                        currentTrackIndex === index
+                          ? "bg-black text-green-500 font-bold"
+                          : "hover:bg-gray-200 text-black"
+                      }`}
+                      onClick={() => handleSelectSpotifyTrack(index)}
+                    >
+                      <span>{track.name}</span>
+                      <span>
+                        {Math.floor(track.duration_ms / 60000)}:
+                        {(Math.floor((track.duration_ms % 60000) / 1000))
+                          .toString()
+                          .padStart(2, "0")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <div className="h-2 bg-gray-400 rounded-full mb-4 relative">
+                  <div
+                    className="h-full bg-blue-600 rounded-full absolute top-0 left-0 transition-all duration-200"
+                    style={{ width: `${progress}%` }}
                   />
-                )}
-                <div className="p-2 text-sm font-bold truncate text-center text-black">
-                  {playlist.name}
+                  <div
+                    className="w-4 h-4 bg-blue-600 rounded-full absolute top-[-4px] transition-all duration-200"
+                    style={{ left: `calc(${progress}% - 8px)` }}
+                  />
+                </div>
+                <div className="flex justify-around items-center text-black">
+                  <button onClick={handlePrevTrack}>⏮️</button>
+                  <button onClick={() => setIsPlaying(!isPlaying)}>
+                    {isPlaying ? "⏸️" : "▶️"}
+                  </button>
+                  <button onClick={handleNextTrack}>⏭️</button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      ) : (
+            </div>
+          </div>
+        )}
+
+      {selectedOption !== "spotify" && (
           <div className="bg-yellow-600 p-4 rounded-3xl flex flex-col sm:flex-row gap-4">
             <img
               src={
@@ -329,25 +395,27 @@ useEffect(() => {
               onClick={() => setIsSubModalOpen(true)}
             />
             <div className="bg-gray-100 rounded-3xl p-4 sm:p-6 flex-1 flex flex-col justify-between mt-2 sm:mt-0">
-              <ul className="text-black font-bold mb-4">
-                {albumSongs[selectedAlbum]?.map((song, index) => (
-                  <SongItem
-                    key={index}
-                    song={song}
-                    isSelected={currentSongIndex === index}
-                      onSelect={() => {
-                        if (audioRef.current) {
-                          audioRef.current.pause();
-                          audioRef.current.src = song.file;
-                          audioRef.current.volume = volume;
-                          audioRef.current.play();
-                        }
-                        setCurrentSongIndex(index);
-                        setIsPlaying(true);
-                      }}
-                  />
-                ))}
-              </ul>
+              <div className="max-h-[250px] overflow-y-auto pr-1">
+                <ul className="text-black font-bold mb-4">
+                  {albumSongs[selectedAlbum]?.map((song, index) => (
+                    <SongItem
+                      key={index}
+                      song={song}
+                      isSelected={currentSongIndex === index}
+                        onSelect={() => {
+                          if (audioRef.current) {
+                            audioRef.current.pause();
+                            audioRef.current.src = song.file;
+                            audioRef.current.volume = volume;
+                            audioRef.current.play();
+                          }
+                          setCurrentSongIndex(index);
+                          setIsPlaying(true);
+                        }}
+                    />
+                  ))}
+                </ul>
+              </div>
               <div>
                 <div className="h-2 bg-gray-400 rounded-full mb-4 relative">
                   <div
