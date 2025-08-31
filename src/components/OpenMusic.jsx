@@ -38,6 +38,62 @@ export default function OpenMusic({ accessToken }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const toggleModal = () => setIsOpen(!isOpen);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+
+  // Spotify playlists
+  const [spotifyPlaylists, setSpotifyPlaylists] = useState([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [playlistTracks, setPlaylistTracks] = useState([]);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+
+  useEffect(() => {
+    if (!accessToken) return;
+    async function fetchPlaylists() {
+      try {
+        const res = await fetch("https://api.spotify.com/v1/me/playlists", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        const data = await res.json();
+        setSpotifyPlaylists(data.items || []);
+      } catch (error) {
+        console.error("Error cargando playlists de Spotify:", error);
+      }
+    }
+    fetchPlaylists();
+  }, [accessToken]);
+
+  const fetchPlaylistTracks = async (playlistId) => {
+    try {
+      const res = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const data = await res.json();
+      setPlaylistTracks(data.items.map(item => item.track));
+    } catch (error) {
+      console.error("Error al obtener canciones:", error);
+    }
+  };
+
+  const handleSelectSpotifyPlaylist = (playlist) => {
+    setSelectedPlaylist(playlist);
+    fetchPlaylistTracks(playlist.id);
+  };
+
+  const handleSelectSpotifyTrack = (index) => {
+    setCurrentTrackIndex(index);
+    setIsPlaying(true);
+  };
+
+  const handlePrevTrack = () => {
+    setCurrentTrackIndex((prev) =>
+      prev === 0 ? playlistTracks.length - 1 : prev - 1
+    );
+  };
+
+  const handleNextTrack = () => {
+    setCurrentTrackIndex((prev) =>
+      prev === playlistTracks.length - 1 ? 0 : prev + 1
+    );
+  };
   // Song navigation states
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [audio, setAudio] = useState(null);
@@ -170,7 +226,7 @@ export default function OpenMusic({ accessToken }) {
         className={
           `
           fixed bottom-0 left-1/2 transform -translate-x-1/2
-          w-full max-w-[700px] px-8 bg-white text-black p-6
+          w-full max-w-[700px] px-8 bg-gray-400 text-black p-6
           rounded-t-xl shadow-lg z-50
           transition-transform duration-300 ease-in-out
           ${isOpen ? "translate-y-0" : "translate-y-full"}
@@ -209,8 +265,38 @@ export default function OpenMusic({ accessToken }) {
           </button>
         </div>
 
+        {/* Spotify playlists carousel above album cards */}
+        {selectedOption === "spotify" && (
+          <div className="flex overflow-x-auto gap-4 pb-4 -mx-4 px-4">
+            {spotifyPlaylists.length === 0 ? (
+              <p className="text-white text-center col-span-full w-full">
+                No se encontraron playlists o aún se están cargando.
+              </p>
+            ) : (
+              spotifyPlaylists.map((playlist) => (
+                <div
+                  key={playlist.id}
+                  className="min-w-[140px] flex-shrink-0 bg-white rounded-xl overflow-hidden shadow hover:scale-105 transition cursor-pointer"
+                  onClick={() => handleSelectSpotifyPlaylist(playlist)}
+                >
+                  {playlist.images[0] && (
+                    <img
+                      src={playlist.images[0].url}
+                      alt={playlist.name}
+                      className="w-full h-24 object-cover"
+                    />
+                  )}
+                  <div className="p-2 text-sm font-bold truncate text-center text-black">
+                    {playlist.name}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
         <div className="hidden sm:grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-          {selectedOption === "predeterminada" ? (
+          {selectedOption === "predeterminada" && (
             <>
               <div
                 className="bg-red-600 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
@@ -234,109 +320,69 @@ export default function OpenMusic({ accessToken }) {
                 <span className="text-white font-bold">Concentracion</span>
               </div>
             </>
-          ) : (
-            <>
-              <div
-                className="bg-green-600 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
-                onClick={() => setSelectedAlbum("naturaleza")}
-              >
-                {selectedOption === "spotify" ? (
-                  <div className="w-24 h-24 mb-2" />
-                ) : (
-                  <img src="/musica/naturaleza.webp" alt="Naturaleza" className="rounded-2xl w-24 h-24 object-cover mb-2" />
-                )}
-              </div>
-              <div
-                className="bg-orange-500 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
-                onClick={() => setSelectedAlbum("instrumental")}
-              >
-                {selectedOption === "spotify" ? (
-                  <div className="w-24 h-24 mb-2" />
-                ) : (
-                  <img src="/instrumental.webp" alt="Instrumental" className="rounded-2xl w-24 h-24 object-cover mb-2" />
-                )}
-              </div>
-              <div
-                className="bg-amber-800 rounded-2xl p-4 flex flex-col items-center cursor-pointer"
-                onClick={() => setSelectedAlbum("concentracion")}
-              >
-                {selectedOption === "spotify" ? (
-                  <div className="w-24 h-24 mb-2" />
-                ) : (
-                  <img src="/concentracion.webp" alt="Concentracion" className="rounded-2xl w-24 h-24 object-cover mb-2" />
-                )}
-              </div>
-            </>
           )}
         </div>
 
-        {selectedOption === "spotify" ? (
-          <div className="bg-yellow-600 p-4 rounded-3xl flex flex-col items-center">
-            <div className="h-[120px] w-full mb-4 bg-gray-200 rounded-3xl" />
-            <div className="bg-gray-100 rounded-3xl p-4 sm:p-6 w-full">
-              <div className="h-2 bg-gray-400 rounded-full mb-4 relative">
-                <div className="w-2/3 h-full bg-blue-600 rounded-full absolute top-0 left-0" />
-                <div className="w-4 h-4 bg-blue-600 rounded-full absolute top-[-4px] left-[66%]" />
-              </div>
-              <div className="flex justify-around items-center text-black">
-                {/* los controles de volumen y reproducción (igual que como ya están) */}
-                <div className="relative inline-block">
-                  <button onClick={() => setShowVolume(!showVolume)}>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 46 46"
-                      fill="none"
-                      className="w-6 h-6 sm:w-8 sm:h-8"
+        {selectedOption === "spotify" && (
+          <div className="bg-yellow-500 rounded-3xl p-4 flex flex-col sm:flex-row gap-4">
+            {/* Portada de playlist seleccionada */}
+            <img
+              src={
+                selectedPlaylist?.images?.[0]?.url || "/default-playlist.jpg"
+              }
+              alt={selectedPlaylist?.name || "Playlist"}
+              className="w-[220px] h-[110px] sm:max-w-[200px] sm:h-auto object-cover rounded-3xl mx-auto cursor-pointer"
+            />
+            {/* Contenido de la playlist seleccionada */}
+            <div className="bg-white rounded-3xl p-4 sm:p-6 flex-1 flex flex-col justify-between mt-2 sm:mt-0">
+              <div className="max-h-[250px] overflow-y-auto pr-1">
+                <ul className="text-black font-bold mb-4">
+                  {playlistTracks.map((track, index) => (
+                    <li
+                      key={track.id}
+                      className={`flex justify-between p-2 rounded cursor-pointer transition-colors ${
+                        currentTrackIndex === index
+                          ? "bg-black text-green-500 font-bold"
+                          : "hover:bg-gray-200 text-black"
+                      }`}
+                      onClick={() => handleSelectSpotifyTrack(index)}
                     >
-                      <path d="M8.41634 11.5417V34.4583H0.0830078V11.5417H8.41634ZM12.583 35.9375L29.2497 45.3125V0.6875L12.583 10.0625V35.9375ZM42.9601 14.2083L41.7059 12.5437L38.3809 15.0563L39.6351 16.7187C41.0016 18.5279 41.7406 20.7335 41.7399 23.0007C41.7391 25.2679 40.9987 27.473 39.6309 29.2812L38.3747 30.9417L41.6976 33.4542L42.9538 31.7938C44.8687 29.2623 45.9054 26.1752 45.9066 23.001C45.9077 19.8269 44.8732 16.7391 42.9601 14.2062" fill="black"/>
-                    </svg>
-                  </button>
-                  {showVolume && (
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={volume}
-                      onChange={handleVolumeChange}
-                      className="absolute bottom-12 left-1/2 -translate-x-1/2 w-24 rotate-[-90deg] accent-black"
-                    />
-                  )}
+                      <span>{track.name}</span>
+                      <span>
+                        {Math.floor(track.duration_ms / 60000)}:
+                        {(Math.floor((track.duration_ms % 60000) / 1000))
+                          .toString()
+                          .padStart(2, "0")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <div className="h-2 bg-gray-400 rounded-full mb-4 relative">
+                  <div
+                    className="h-full bg-blue-600 rounded-full absolute top-0 left-0 transition-all duration-200"
+                    style={{ width: `${progress}%` }}
+                  />
+                  <div
+                    className="w-4 h-4 bg-blue-600 rounded-full absolute top-[-4px] transition-all duration-200"
+                    style={{ left: `calc(${progress}% - 8px)` }}
+                  />
                 </div>
-                <button>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 37 38"
-                    fill="none"
-                    className="w-6 h-6 sm:w-8 sm:h-8 hover:bg-green-400"
-                  >
-                    <path d="M1.56278 0.00024128C1.97718 0.00024128 2.37461 0.16486 2.66763 0.457886C2.96066 0.750911 3.12528 1.14834 3.12528 1.56274L3.12528 35.9377C3.12528 36.3521 2.96066 36.7496 2.66763 37.0426C2.37461 37.3356 1.97718 37.5002 1.56278 37.5002C1.14838 37.5002 0.750952 37.3356 0.457927 37.0426C0.164901 36.7496 0.000282104 36.3521 0.000282104 35.9377L0.000282104 1.56274C-0.00252055 1.35678 0.0359805 1.15233 0.113511 0.961497C0.191042 0.77066 0.306026 0.597297 0.45168 0.451643C0.597333 0.30599 0.770701 0.191001 0.961538 0.11347C1.15238 0.0359396 1.35682 -0.00256137 1.56278 0.00024128ZM8.64612 19.9773C8.62739 19.2513 8.77761 18.5309 9.08492 17.8729C9.39223 17.2149 9.84823 16.6373 10.4169 16.1857L29.3961 1.41483C30.0753 0.900243 30.8815 0.581492 31.7294 0.498159H32.2086C32.9299 0.480104 33.6448 0.637383 34.2919 0.956491C35.0625 1.33254 35.7121 1.91718 36.1669 2.64399C36.6199 3.3684 36.8582 4.20633 36.8544 5.06066V32.4565C36.8522 33.2781 36.6291 34.084 36.2086 34.7898C35.7752 35.4915 35.1644 36.0664 34.4378 36.4565C33.714 36.8477 32.8975 37.035 32.0756 36.9983C31.2537 36.9616 30.4572 36.7023 29.7711 36.2482L10.7711 23.5815C10.1669 23.1836 9.66695 22.6482 9.31278 22.019C8.93894 21.3976 8.71099 20.6996 8.64612 19.9773Z" fill="black"/>
-                  </svg>
-                </button>
-                <button className="text-3xl">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 50 50"
-                    fill="none"
-                    className="w-8 h-8 sm:w-12 sm:h-12"
-                  >
-                    <path d="M29.1667 39.5832V10.4165H37.5V39.5832H29.1667ZM12.5 39.5832V10.4165H20.8333V39.5832H12.5Z" fill="green"/>
-                  </svg>
-                </button>
-                <button>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 37 38"
-                    fill="none"
-                    className="w-6 h-6 sm:w-8 sm:h-8 hover:bg-green-400"
-                  >
-                    <path d="M35.2917 37.5C34.8773 37.5 34.4799 37.3354 34.1869 37.0424C33.8938 36.7493 33.7292 36.3519 33.7292 35.9375V1.5625C33.7292 1.1481 33.8938 0.750671 34.1869 0.457645C34.4799 0.16462 34.8773 0 35.2917 0C35.7061 0 36.1035 0.16462 36.3966 0.457645C36.6896 0.750671 36.8542 1.1481 36.8542 1.5625V35.9375C36.857 36.1435 36.8185 36.3479 36.741 36.5387C36.6635 36.7296 36.5485 36.9029 36.4028 37.0486C36.2572 37.1943 36.0838 37.3092 35.893 37.3868C35.7021 37.4643 35.4977 37.5028 35.2917 37.5ZM28.2084 17.5229C28.2271 18.2489 28.0769 18.9693 27.7696 19.6273C27.4623 20.2853 27.0063 20.8629 26.4375 21.3146L7.45838 36.0854C6.77921 36.6 5.97296 36.9188 5.12504 37.0021H4.64588C3.92458 37.0201 3.20967 36.8629 2.56254 36.5438C1.79201 36.1677 1.1424 35.5831 0.687544 34.8563C0.234631 34.1318 -0.0037423 33.2939 4.44236e-05 32.4396V5.04375C0.00229432 4.22215 0.225354 3.41625 0.645878 2.71042C1.07926 2.00876 1.6901 1.43385 2.41671 1.04375C3.14049 0.652522 3.95695 0.465253 4.77888 0.501947C5.60081 0.53864 6.39734 0.797917 7.08338 1.25208L26.0834 13.9188C26.6875 14.3167 27.1875 14.8521 27.5417 15.4813C27.9156 16.1026 28.1435 16.8007 28.2084 17.5229Z" fill="black"/>
-                  </svg>
-                </button>
+                <div className="flex justify-around items-center text-black">
+                  <button onClick={handlePrevTrack}>⏮️</button>
+                  <button onClick={() => setIsPlaying(!isPlaying)}>
+                    {isPlaying ? "⏸️" : "▶️"}
+                  </button>
+                  <button onClick={handleNextTrack}>⏭️</button>
+                </div>
               </div>
             </div>
           </div>
-        ) : (
+        )}
+
+      {selectedOption !== "spotify" && (
           <div className="bg-yellow-600 p-4 rounded-3xl flex flex-col sm:flex-row gap-4">
             <img
               src={
@@ -349,25 +395,27 @@ export default function OpenMusic({ accessToken }) {
               onClick={() => setIsSubModalOpen(true)}
             />
             <div className="bg-gray-100 rounded-3xl p-4 sm:p-6 flex-1 flex flex-col justify-between mt-2 sm:mt-0">
-              <ul className="text-black font-bold mb-4">
-                {albumSongs[selectedAlbum]?.map((song, index) => (
-                  <SongItem
-                    key={index}
-                    song={song}
-                    isSelected={currentSongIndex === index}
-                      onSelect={() => {
-                        if (audioRef.current) {
-                          audioRef.current.pause();
-                          audioRef.current.src = song.file;
-                          audioRef.current.volume = volume;
-                          audioRef.current.play();
-                        }
-                        setCurrentSongIndex(index);
-                        setIsPlaying(true);
-                      }}
-                  />
-                ))}
-              </ul>
+              <div className="max-h-[250px] overflow-y-auto pr-1">
+                <ul className="text-black font-bold mb-4">
+                  {albumSongs[selectedAlbum]?.map((song, index) => (
+                    <SongItem
+                      key={index}
+                      song={song}
+                      isSelected={currentSongIndex === index}
+                        onSelect={() => {
+                          if (audioRef.current) {
+                            audioRef.current.pause();
+                            audioRef.current.src = song.file;
+                            audioRef.current.volume = volume;
+                            audioRef.current.play();
+                          }
+                          setCurrentSongIndex(index);
+                          setIsPlaying(true);
+                        }}
+                    />
+                  ))}
+                </ul>
+              </div>
               <div>
                 <div className="h-2 bg-gray-400 rounded-full mb-4 relative">
                   <div
