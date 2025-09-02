@@ -31,6 +31,45 @@ function SongItem({ song, isSelected, onSelect }) {
 }
 
 export default function OpenMusic({ accessToken }) {
+  // --- SPOTIFY WEB PLAYBACK SDK ---
+  useEffect(() => {
+    if (!accessToken) return;
+
+    // ✅ DEFINIR ESTA FUNCIÓN PRIMERO PARA CREAR EL REPRODUCTOR PERSONALIZADO MEDIANTE SDK 
+    window.onSpotifyWebPlaybackSDKReady = () => {
+      const player = new Spotify.Player({
+        name: 'TavoPomodoro Player',
+        getOAuthToken: cb => cb(accessToken),
+        volume: 0.5,
+      });
+
+      // Opcional: listeners para ready/error
+      player.addListener('ready', ({ device_id }) => {
+        console.log('✅ Spotify Player listo con device ID:', device_id);
+        window.spotifyDeviceId = device_id;
+      });
+
+      player.addListener('initialization_error', e => console.error('🎧 init error', e));
+      player.addListener('authentication_error', e => console.error('🔐 auth error', e));
+      player.addListener('account_error', e => console.error('👤 account error', e));
+      player.addListener('playback_error', e => console.error('⛔️ playback error', e));
+
+      player.connect(); 
+    };
+
+    const script = document.createElement("script");
+    script.src = "https://sdk.scdn.co/spotify-player.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      // Limpieza
+      if (window.Spotify) {
+        window.onSpotifyWebPlaybackSDKReady = null;
+      }
+      document.body.removeChild(script);
+    };
+  }, [accessToken]);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState("predeterminada");
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
@@ -45,21 +84,45 @@ export default function OpenMusic({ accessToken }) {
   const [playlistTracks, setPlaylistTracks] = useState([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
-  useEffect(() => {
-    if (!accessToken) return;
-    async function fetchPlaylists() {
-      try {
-        const res = await fetch("https://api.spotify.com/v1/me/playlists", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        const data = await res.json();
-        setSpotifyPlaylists(data.items || []);
-      } catch (error) {
-        console.error("Error cargando playlists de Spotify:", error);
-      }
+useEffect(() => {
+  if (!accessToken) return;
+
+  const fetchPlaylists = async () => {
+    try {
+      const res = await fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const data = await res.json();
+
+      const likedRes = await fetch("https://api.spotify.com/v1/me/tracks?limit=50", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const likedData = await likedRes.json();
+      const likedTracks = Array.isArray(likedData?.items)
+        ? likedData.items.map(item => item.track)
+        : [];
+
+      const likedPlaylist = {
+        id: "liked-songs",
+        name: "Canciones que te gustan",
+        image: "https://misc.scdn.co/liked-songs/liked-songs-640.png",
+        tracks: likedTracks,
+      };
+
+      setSpotifyPlaylists([likedPlaylist, ...(data.items || [])]);
+    } catch (error) {
+      console.error("Error fetching playlists:", error);
     }
-    fetchPlaylists();
-  }, [accessToken]);
+  };
+
+  fetchPlaylists();
+}, [accessToken]);
 
   const fetchPlaylistTracks = async (playlistId) => {
     try {
@@ -75,12 +138,48 @@ export default function OpenMusic({ accessToken }) {
 
   const handleSelectSpotifyPlaylist = (playlist) => {
     setSelectedPlaylist(playlist);
-    fetchPlaylistTracks(playlist.id);
+    // Si es la playlist especial de "Me gusta", ya tenemos las canciones en playlist.tracks.items
+    if (playlist.id === "liked-songs" && playlist.tracks && playlist.tracks.items) {
+      setPlaylistTracks(playlist.tracks.items);
+    } else {
+      fetchPlaylistTracks(playlist.id);
+    }
+  };
+
+  // Función para reproducir una canción en Spotify usando la Web API de Spotify
+  const playTrackOnSpotify = async (trackUri) => {
+    if (!accessToken) return;
+    try {
+      // Usar el device_id del Web Playback SDK si está disponible
+      const deviceId = window.spotifyDeviceId;
+      await fetch(
+        `https://api.spotify.com/v1/me/player/play${deviceId ? `?device_id=${deviceId}` : ""}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            uris: [trackUri],
+          }),
+        }
+      );
+    } catch (error) {
+      console.error("Error reproduciendo canción en Spotify:", error);
+    }
   };
 
   const handleSelectSpotifyTrack = (index) => {
-    setCurrentTrackIndex(index);
-    setIsPlaying(true);
+    // Solo ejecuta la reproducción en Spotify si está activo el modo Spotify
+    if (selectedOption === "spotify") {
+      setCurrentTrackIndex(index);
+      setIsPlaying(true);
+      const song = playlistTracks[index];
+      if (song && song.uri) {
+        playTrackOnSpotify(song.uri);
+      }
+    }
   };
 
   const handlePrevTrack = () => {
@@ -277,15 +376,15 @@ export default function OpenMusic({ accessToken }) {
                 <div
                   key={playlist.id}
                   className="min-w-[140px] flex-shrink-0 bg-white rounded-xl overflow-hidden shadow hover:scale-105 transition cursor-pointer"
-                  onClick={() => handleSelectSpotifyPlaylist(playlist)}
+                  onClick={() => {
+                    handleSelectSpotifyPlaylist(playlist);
+                  }}
                 >
-                  {playlist.images[0] && (
-                    <img
-                      src={playlist.images[0].url}
-                      alt={playlist.name}
-                      className="w-full h-24 object-cover"
-                    />
-                  )}
+                  <img
+                    src={playlist.image || (playlist.images && playlist.images[0]?.url)}
+                    alt={playlist.name}
+                    className="w-full h-24 object-cover"
+                  />
                   <div className="p-2 text-sm font-bold truncate text-center text-black">
                     {playlist.name}
                   </div>

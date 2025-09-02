@@ -77,7 +77,7 @@ useEffect(() => {
           sm:w-[80vw]
           xs:w-[98vw]">
           <p className="text-white text-3xl font-bold text-center">
-            Bienvenido a PomodoroBySpotify
+            Bienvenido a PomodoroMusicTime
           </p>
           <img 
             src="/iconanimation.gif" 
@@ -87,7 +87,7 @@ useEffect(() => {
             playsInline 
             className="w-full max-w-xs mx-auto"
           />
-          <p className="text-white text-2xl font-bold text-center py-5">
+          <p className="text-white text-1xl font-bold text-center py-5">
             Conéctate para sincronizar tus playlist favoritas
           </p>
          <button
