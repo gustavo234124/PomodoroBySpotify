@@ -569,11 +569,39 @@ const handlePrevTrack = () => {
                   />
                 </div>
                 <div className="flex justify-around items-center text-black">
-                <button onClick={handlePrevTrack}>⏮️</button>
-<button onClick={() => setIsPlaying(!isPlaying)}>
-  {isPlaying ? "⏸️" : "▶️"}
-</button>
-<button onClick={handleNextTrack}>⏭️</button>
+                  <button onClick={handlePrevTrack}>⏮️</button>
+                  <button
+                    onClick={async () => {
+                      const deviceId = window.spotifyDeviceId;
+                      if (!deviceId) return;
+
+                      try {
+                        const response = await fetch("https://api.spotify.com/v1/me/player", {
+                          headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                          },
+                        });
+                        const data = await response.json();
+
+                        const isPaused = data.is_playing === false;
+
+                        await fetch(`https://api.spotify.com/v1/me/player/${isPaused ? "play" : "pause"}?device_id=${deviceId}`, {
+                          method: "PUT",
+                          headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                            "Content-Type": "application/json",
+                          },
+                        });
+
+                        setIsPlaying(isPaused);
+                      } catch (err) {
+                        console.error("Error toggling playback:", err);
+                      }
+                    }}
+                  >
+                    {isPlaying ? "⏸️" : "▶️"}
+                  </button>
+                  <button onClick={handleNextTrack}>⏭️</button>
                 </div>
               </div>
             </div>
