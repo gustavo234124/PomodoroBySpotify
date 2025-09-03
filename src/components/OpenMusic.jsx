@@ -35,7 +35,7 @@ export default function OpenMusic({ accessToken }) {
   useEffect(() => {
     if (!accessToken) return;
 
-    // ✅ DEFINIR ESTA FUNCIÓN PRIMERO PARA CREAR EL REPRODUCTOR PERSONALIZADO MEDIANTE SDK 
+    //  FUNCIÓN  PARA CREAR EL REPRODUCTOR PERSONALIZADO MEDIANTE Web Player SDK Spotify
     window.onSpotifyWebPlaybackSDKReady = () => {
       const player = new Spotify.Player({
         name: 'TavoPomodoro Player',
@@ -54,7 +54,71 @@ export default function OpenMusic({ accessToken }) {
       player.addListener('account_error', e => console.error('👤 account error', e));
       player.addListener('playback_error', e => console.error('⛔️ playback error', e));
 
-      player.connect(); 
+      // Listener para detectar cuando la canción termina y avanzar automáticamente
+      player.addListener('player_state_changed', async (state) => {
+        if (!state) return;
+        const { position, duration, paused } = state;
+        const isTrackEnded = position === 0 && paused && state.restrictions?.disallow_resuming_reasons?.includes("not_paused");
+        const isTrackFinished = state.position === 0 && paused && state.track_window.previous_tracks.length > 0;
+        if (isTrackEnded || isTrackFinished) {
+          console.log("🎵 Canción terminada, avanzando a la siguiente...");
+          try {
+            await fetch("https://api.spotify.com/v1/me/player/next", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            });
+          } catch (err) {
+            console.error("⛔️ Error al avanzar a la siguiente canción:", err);
+          }
+        }
+      });
+
+      // Nuevo listener para reproducir automáticamente la siguiente canción cuando termina la actual
+      player.addListener('player_state_changed', (state) => {
+        if (!state || !state.track_window || !state.track_window.next_tracks.length) return;
+
+        const { paused, position, duration } = state;
+
+        // Cuando se termina la canción actual
+        if (paused && position === 0) {
+          const nextTrackUri = state.track_window.next_tracks[0]?.uri;
+          if (nextTrackUri) {
+            // Llama a playTrackOnSpotify y luego actualiza los estados visuales
+            playTrackOnSpotify(nextTrackUri);
+            setIsPlaying(true);
+          }
+        }
+      });
+
+      player.connect();
+
+      // Nuevo listener para detectar fin de playlist y reiniciar
+      player.addListener('player_state_changed', (state) => {
+        if (!state || !state.track_window || !state.track_window.current_track) return;
+
+        const { current_track, next_tracks } = state.track_window;
+
+        // Reproducir siguiente canción si hay
+        if (next_tracks.length > 0) return;
+
+        // Si no hay siguiente, reiniciar la playlist
+        console.log("🔁 Playlist finalizada. Reiniciando...");
+
+        fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.spotifyDeviceId}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            context_uri: selectedPlaylist?.uri, // Asegúrate de que este valor esté en tu estado
+            offset: { position: 0 },
+            position_ms: 0,
+          }),
+        }).catch((err) => console.error("Error al reiniciar playlist:", err));
+      });
     };
 
     const script = document.createElement("script");
@@ -138,9 +202,9 @@ useEffect(() => {
 
   const handleSelectSpotifyPlaylist = (playlist) => {
     setSelectedPlaylist(playlist);
-    // Si es la playlist especial de "Me gusta", ya tenemos las canciones en playlist.tracks.items
-    if (playlist.id === "liked-songs" && playlist.tracks && playlist.tracks.items) {
-      setPlaylistTracks(playlist.tracks.items);
+    // Si es la playlist especial de "Me gusta", ya tenemos las canciones en playlist.tracks (es un array de tracks)
+    if (playlist.id === "liked-songs" && playlist.tracks) {
+      setPlaylistTracks(playlist.tracks);
     } else {
       fetchPlaylistTracks(playlist.id);
     }
@@ -152,19 +216,44 @@ useEffect(() => {
     try {
       // Usar el device_id del Web Playback SDK si está disponible
       const deviceId = window.spotifyDeviceId;
-      await fetch(
-        `https://api.spotify.com/v1/me/player/play${deviceId ? `?device_id=${deviceId}` : ""}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            uris: [trackUri],
-          }),
-        }
-      );
+      // Definir playlistUri y selectedIndex para reproducir la canción dentro de la playlist
+      const playlistUri = selectedPlaylist?.uri;
+      // selectedPlaylist puede ser "liked-songs", que no tiene uri. En ese caso, usar uris como antes
+      if (playlistUri) {
+        const selectedIndex = playlistTracks.findIndex(track => track.uri === trackUri);
+        setCurrentTrackIndex(selectedIndex);
+        await fetch(
+          `https://api.spotify.com/v1/me/player/play${deviceId ? `?device_id=${deviceId}` : ""}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              context_uri: playlistUri,
+              offset: {
+                position: selectedIndex
+              }
+            }),
+          }
+        );
+      } else {
+        // Para "liked-songs", que no tiene uri, reproducir solo la canción seleccionada
+        await fetch(
+          `https://api.spotify.com/v1/me/player/play${deviceId ? `?device_id=${deviceId}` : ""}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              uris: [trackUri],
+            }),
+          }
+        );
+      }
     } catch (error) {
       console.error("Error reproduciendo canción en Spotify:", error);
     }
@@ -182,17 +271,27 @@ useEffect(() => {
     }
   };
 
-  const handlePrevTrack = () => {
-    setCurrentTrackIndex((prev) =>
-      prev === 0 ? playlistTracks.length - 1 : prev - 1
-    );
-  };
+const handleNextTrack = () => {
+  if (playlistTracks.length === 0) return;
+  const nextIndex = (currentTrackIndex + 1) % playlistTracks.length;
+  setCurrentTrackIndex(nextIndex);
+  setIsPlaying(true);
+  const nextTrack = playlistTracks[nextIndex];
+  if (nextTrack?.uri) {
+    playTrackOnSpotify(nextTrack.uri);
+  }
+};
 
-  const handleNextTrack = () => {
-    setCurrentTrackIndex((prev) =>
-      prev === playlistTracks.length - 1 ? 0 : prev + 1
-    );
-  };
+const handlePrevTrack = () => {
+  if (playlistTracks.length === 0) return;
+  const prevIndex = (currentTrackIndex - 1 + playlistTracks.length) % playlistTracks.length;
+  setCurrentTrackIndex(prevIndex);
+  setIsPlaying(true);
+  const prevTrack = playlistTracks[prevIndex];
+  if (prevTrack?.uri) {
+    playTrackOnSpotify(prevTrack.uri);
+  }
+};
   // Song navigation states
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [audio, setAudio] = useState(null);
@@ -427,7 +526,7 @@ useEffect(() => {
             {/* Portada de playlist seleccionada */}
             <img
               src={
-                selectedPlaylist?.images?.[0]?.url || "/default-playlist.jpg"
+                selectedPlaylist?.images?.[0]?.url || "/defaultPlailys.webp"
               }
               alt={selectedPlaylist?.name || "Playlist"}
               className="w-[220px] h-[110px] sm:max-w-[200px] sm:h-auto object-cover rounded-3xl mx-auto cursor-pointer"
@@ -470,11 +569,11 @@ useEffect(() => {
                   />
                 </div>
                 <div className="flex justify-around items-center text-black">
-                  <button onClick={handlePrevTrack}>⏮️</button>
-                  <button onClick={() => setIsPlaying(!isPlaying)}>
-                    {isPlaying ? "⏸️" : "▶️"}
-                  </button>
-                  <button onClick={handleNextTrack}>⏭️</button>
+                <button onClick={handlePrevTrack}>⏮️</button>
+<button onClick={() => setIsPlaying(!isPlaying)}>
+  {isPlaying ? "⏸️" : "▶️"}
+</button>
+<button onClick={handleNextTrack}>⏭️</button>
                 </div>
               </div>
             </div>
@@ -545,6 +644,12 @@ useEffect(() => {
                         }}
                       />
                     )}
+                    <audio
+  ref={audioRef}
+  src={playlistTracks[currentTrackIndex]?.preview_url || ""}
+  autoPlay
+  onEnded={handleNextTrack}
+/>
                     {/* Botón con SVG de sonido */}
                     <button onClick={() => setShowVolumeSlider(!showVolumeSlider)}>
                       <svg
