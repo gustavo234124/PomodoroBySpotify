@@ -31,6 +31,48 @@ function SongItem({ song, isSelected, onSelect }) {
 }
 
 export default function OpenMusic({ accessToken }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedOption, setSelectedOption] = useState("predeterminada");
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
+  const [selectedAlbum, setSelectedAlbum] = useState("naturaleza");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const toggleModal = () => setIsOpen(!isOpen);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+
+  // Spotify playlists
+  const [spotifyPlaylists, setSpotifyPlaylists] = useState([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [playlistTracks, setPlaylistTracks] = useState([]);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+
+  // Estados para Spotify progress bar
+  const [spotifyProgress, setSpotifyProgress] = useState(0);
+  const [currentPosition, setCurrentPosition] = useState(0);
+  const [trackDuration, setTrackDuration] = useState(0);
+
+  // Song navigation states
+  const [currentSongIndex, setCurrentSongIndex] = useState(0);
+  const [audio, setAudio] = useState(null);
+
+  // Ref for audio element and progress state
+  const audioRef = useRef(null);
+  const [progress, setProgress] = useState(0);
+
+  // Volume state and handler
+  const [volume, setVolume] = useState(1);
+  const [showVolume, setShowVolume] = useState(false);
+
+  // Helper to get the current song object
+  const currentSong =
+    albumSongs[selectedAlbum] && albumSongs[selectedAlbum][currentSongIndex];
+
+  // Función helper para formatear tiempo
+  const formatTime = (ms) => {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
   // --- SPOTIFY WEB PLAYBACK SDK ---
   useEffect(() => {
     if (!accessToken) return;
@@ -38,7 +80,7 @@ export default function OpenMusic({ accessToken }) {
     //  FUNCIÓN  PARA CREAR EL REPRODUCTOR PERSONALIZADO MEDIANTE Web Player SDK Spotify
     window.onSpotifyWebPlaybackSDKReady = () => {
       const player = new Spotify.Player({
-        name: 'TavoPomodoro Player',
+        name: 'TavoPomodoroDEV',
         getOAuthToken: cb => cb(accessToken),
         volume: 0.5,
       });
@@ -54,71 +96,35 @@ export default function OpenMusic({ accessToken }) {
       player.addListener('account_error', e => console.error('👤 account error', e));
       player.addListener('playback_error', e => console.error('⛔️ playback error', e));
 
-      // Listener para detectar cuando la canción termina y avanzar automáticamente
-      player.addListener('player_state_changed', async (state) => {
+      // Listener principal para player_state_changed
+      player.addListener('player_state_changed', (state) => {
         if (!state) return;
-        const { position, duration, paused } = state;
+        
+        const { position, duration, paused, track_window } = state;
+        
+        // Actualizar información de la canción actual y progress bar
+        if (track_window && track_window.current_track) {
+          setCurrentPosition(position);
+          setTrackDuration(duration);
+          setIsPlaying(!paused);
+          
+          // Actualizar progress bar
+          const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
+          setSpotifyProgress(progressPercentage);
+        }
+
+        // Detectar fin de canción
         const isTrackEnded = position === 0 && paused && state.restrictions?.disallow_resuming_reasons?.includes("not_paused");
         const isTrackFinished = state.position === 0 && paused && state.track_window.previous_tracks.length > 0;
+        
         if (isTrackEnded || isTrackFinished) {
           console.log("🎵 Canción terminada, avanzando a la siguiente...");
-          try {
-            await fetch("https://api.spotify.com/v1/me/player/next", {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
-            });
-          } catch (err) {
-            console.error("⛔️ Error al avanzar a la siguiente canción:", err);
-          }
-        }
-      });
-
-      // Nuevo listener para reproducir automáticamente la siguiente canción cuando termina la actual
-      player.addListener('player_state_changed', (state) => {
-        if (!state || !state.track_window || !state.track_window.next_tracks.length) return;
-
-        const { paused, position, duration } = state;
-
-        // Cuando se termina la canción actual
-        if (paused && position === 0) {
-          const nextTrackUri = state.track_window.next_tracks[0]?.uri;
-          if (nextTrackUri) {
-            // Llama a playTrackOnSpotify y luego actualiza los estados visuales
-            playTrackOnSpotify(nextTrackUri);
-            setIsPlaying(true);
-          }
+          handleNextTrack();
         }
       });
 
       player.connect();
-
-      // Nuevo listener para detectar fin de playlist y reiniciar
-      player.addListener('player_state_changed', (state) => {
-        if (!state || !state.track_window || !state.track_window.current_track) return;
-
-        const { current_track, next_tracks } = state.track_window;
-
-        // Reproducir siguiente canción si hay
-        if (next_tracks.length > 0) return;
-
-        // Si no hay siguiente, reiniciar la playlist
-        console.log("🔁 Playlist finalizada. Reiniciando...");
-
-        fetch(`https://api.spotify.com/v1/me/player/play?device_id=${window.spotifyDeviceId}`, {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            context_uri: selectedPlaylist?.uri, // Asegúrate de que este valor esté en tu estado
-            offset: { position: 0 },
-            position_ms: 0,
-          }),
-        }).catch((err) => console.error("Error al reiniciar playlist:", err));
-      });
+      window.spotifyPlayer = player; // Guardar referencia global
     };
 
     const script = document.createElement("script");
@@ -128,65 +134,113 @@ export default function OpenMusic({ accessToken }) {
 
     return () => {
       // Limpieza
-      if (window.Spotify) {
+      if (window.Spotify && window.spotifyPlayer) {
+        window.spotifyPlayer.disconnect();
         window.onSpotifyWebPlaybackSDKReady = null;
       }
-      document.body.removeChild(script);
+      const existingScript = document.querySelector('script[src="https://sdk.scdn.co/spotify-player.js"]');
+      if (existingScript) {
+        document.body.removeChild(existingScript);
+      }
     };
   }, [accessToken]);
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState("predeterminada");
-  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
-  const [selectedAlbum, setSelectedAlbum] = useState("naturaleza");
-  const [isPlaying, setIsPlaying] = useState(false);
-  const toggleModal = () => setIsOpen(!isOpen);
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
-  // Spotify playlists
-  const [spotifyPlaylists, setSpotifyPlaylists] = useState([]);
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
-  const [playlistTracks, setPlaylistTracks] = useState([]);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  // UseEffect para actualizar progress bar de Spotify
+  useEffect(() => {
+    if (!accessToken || selectedOption !== "spotify") return;
 
-useEffect(() => {
-  if (!accessToken) return;
+    let progressInterval;
 
-  const fetchPlaylists = async () => {
-    try {
-      const res = await fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+    const updateSpotifyProgress = async () => {
+      try {
+        const response = await fetch("https://api.spotify.com/v1/me/player", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
 
-      const data = await res.json();
+        if (response.ok) {
+          const text = await response.text();
+          
+          // Si no hay contenido, simplemente retorna sin hacer nada
+          if (!text || text.trim() === '') {
+            return;
+          }
+          
+          try {
+            const data = JSON.parse(text);
+            if (data && data.item && data.is_playing) {
+              const position = data.progress_ms;
+              const duration = data.item.duration_ms;
+              
+              setCurrentPosition(position);
+              setTrackDuration(duration);
+              
+              // Calcular porcentaje para la barra
+              const progressPercentage = duration > 0 ? (position / duration) * 100 : 0;
+              setSpotifyProgress(progressPercentage);
+            }
+          } catch (jsonError) {
+            console.warn("Error parsing Spotify API response:", jsonError);
+          }
+        }
+      } catch (error) {
+        console.error("Error getting Spotify playback state:", error);
+      }
+    };
 
-      const likedRes = await fetch("https://api.spotify.com/v1/me/tracks?limit=50", {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      const likedData = await likedRes.json();
-      const likedTracks = Array.isArray(likedData?.items)
-        ? likedData.items.map(item => item.track)
-        : [];
-
-      const likedPlaylist = {
-        id: "liked-songs",
-        name: "Canciones que te gustan",
-        image: "https://misc.scdn.co/liked-songs/liked-songs-640.png",
-        tracks: likedTracks,
-      };
-
-      setSpotifyPlaylists([likedPlaylist, ...(data.items || [])]);
-    } catch (error) {
-      console.error("Error fetching playlists:", error);
+    // Actualizar cada segundo cuando está reproduciendo Spotify
+    if (selectedOption === "spotify" && isPlaying) {
+      progressInterval = setInterval(updateSpotifyProgress, 1000);
+      updateSpotifyProgress(); // Llamada inicial
     }
-  };
 
-  fetchPlaylists();
-}, [accessToken]);
+    return () => {
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+    };
+  }, [accessToken, selectedOption, isPlaying]);
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    const fetchPlaylists = async () => {
+      try {
+        const res = await fetch("https://api.spotify.com/v1/me/playlists?limit=50", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        const data = await res.json();
+
+        const likedRes = await fetch("https://api.spotify.com/v1/me/tracks?limit=50", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        const likedData = await likedRes.json();
+        const likedTracks = Array.isArray(likedData?.items)
+          ? likedData.items.map(item => item.track)
+          : [];
+
+        const likedPlaylist = {
+          id: "liked-songs",
+          name: "Canciones que te gustan",
+          image: "https://misc.scdn.co/liked-songs/liked-songs-640.png",
+          tracks: likedTracks,
+        };
+
+        setSpotifyPlaylists([likedPlaylist, ...(data.items || [])]);
+      } catch (error) {
+        console.error("Error fetching playlists:", error);
+      }
+    };
+
+    fetchPlaylists();
+  }, [accessToken]);
 
   const fetchPlaylistTracks = async (playlistId) => {
     try {
@@ -271,33 +325,37 @@ useEffect(() => {
     }
   };
 
-const handleNextTrack = () => {
-  if (playlistTracks.length === 0) return;
-  const nextIndex = (currentTrackIndex + 1) % playlistTracks.length;
-  setCurrentTrackIndex(nextIndex);
-  setIsPlaying(true);
-  const nextTrack = playlistTracks[nextIndex];
-  if (nextTrack?.uri) {
-    playTrackOnSpotify(nextTrack.uri);
-  }
-};
+  const handleNextTrack = async () => {
+    if (selectedOption === "spotify") {
+      if (playlistTracks.length === 0) return;
+      const nextIndex = (currentTrackIndex + 1) % playlistTracks.length;
+      setCurrentTrackIndex(nextIndex);
+      setIsPlaying(true);
+      const nextTrack = playlistTracks[nextIndex];
+      if (nextTrack?.uri) {
+        playTrackOnSpotify(nextTrack.uri);
+      }
+    } else {
+      // Para música local
+      handleNext();
+    }
+  };
 
-const handlePrevTrack = () => {
-  if (playlistTracks.length === 0) return;
-  const prevIndex = (currentTrackIndex - 1 + playlistTracks.length) % playlistTracks.length;
-  setCurrentTrackIndex(prevIndex);
-  setIsPlaying(true);
-  const prevTrack = playlistTracks[prevIndex];
-  if (prevTrack?.uri) {
-    playTrackOnSpotify(prevTrack.uri);
-  }
-};
-  // Song navigation states
-  const [currentSongIndex, setCurrentSongIndex] = useState(0);
-  const [audio, setAudio] = useState(null);
-
-  // Ref for audio element and progress state
-  const audioRef = useRef(null);
+  const handlePrevTrack = async () => {
+    if (selectedOption === "spotify") {
+      if (playlistTracks.length === 0) return;
+      const prevIndex = (currentTrackIndex - 1 + playlistTracks.length) % playlistTracks.length;
+      setCurrentTrackIndex(prevIndex);
+      setIsPlaying(true);
+      const prevTrack = playlistTracks[prevIndex];
+      if (prevTrack?.uri) {
+        playTrackOnSpotify(prevTrack.uri);
+      }
+    } else {
+      // Para música local
+      handlePrev();
+    }
+  };
 
   // Avanzar automáticamente a la siguiente canción cuando termina la actual (loop)
   useEffect(() => {
@@ -316,15 +374,6 @@ const handlePrevTrack = () => {
       audio.removeEventListener("ended", handleEnded);
     };
   }, [selectedAlbum, currentSongIndex]);
-  const [progress, setProgress] = useState(0);
-
-  // Volume state and handler
-  const [volume, setVolume] = useState(1);
-  const [showVolume, setShowVolume] = useState(false);
-
-  // Helper to get the current song object
-  const currentSong =
-    albumSongs[selectedAlbum] && albumSongs[selectedAlbum][currentSongIndex];
 
   // Volume handler
   const handleVolumeChange = (e) => {
@@ -558,44 +607,56 @@ const handlePrevTrack = () => {
               </div>
 
               <div>
+                {/* Progress bar con lógica condicional */}
                 <div className="h-2 bg-gray-400 rounded-full mb-4 relative">
                   <div
                     className="h-full bg-blue-600 rounded-full absolute top-0 left-0 transition-all duration-200"
-                    style={{ width: `${progress}%` }}
+                    style={{ width: `${selectedOption === "spotify" ? spotifyProgress : progress}%` }}
                   />
                   <div
                     className="w-4 h-4 bg-blue-600 rounded-full absolute top-[-4px] transition-all duration-200"
-                    style={{ left: `calc(${progress}% - 8px)` }}
+                    style={{ left: `calc(${selectedOption === "spotify" ? spotifyProgress : progress}% - 8px)` }}
                   />
                 </div>
+                
+                {/* Tiempo actual/total para Spotify */}
+                {selectedOption === "spotify" && trackDuration > 0 && (
+                  <div className="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>{formatTime(currentPosition)}</span>
+                    <span>{formatTime(trackDuration)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-around items-center text-black">
                   <button onClick={handlePrevTrack}>⏮️</button>
                   <button
                     onClick={async () => {
-                      const deviceId = window.spotifyDeviceId;
-                      if (!deviceId) return;
+                      if (selectedOption === "spotify") {
+                        const deviceId = window.spotifyDeviceId;
+                        if (!deviceId) return;
 
-                      try {
-                        const response = await fetch("https://api.spotify.com/v1/me/player", {
-                          headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                          },
-                        });
-                        const data = await response.json();
+                        try {
+                          const response = await fetch("https://api.spotify.com/v1/me/player", {
+                            headers: {
+                              Authorization: `Bearer ${accessToken}`,
+                            },
+                          });
+                          const data = await response.json();
 
-                        const isPaused = data.is_playing === false;
+                          const isPaused = data.is_playing === false;
 
-                        await fetch(`https://api.spotify.com/v1/me/player/${isPaused ? "play" : "pause"}?device_id=${deviceId}`, {
-                          method: "PUT",
-                          headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                            "Content-Type": "application/json",
-                          },
-                        });
+                          await fetch(`https://api.spotify.com/v1/me/player/${isPaused ? "play" : "pause"}?device_id=${deviceId}`, {
+                            method: "PUT",
+                            headers: {
+                              Authorization: `Bearer ${accessToken}`,
+                              "Content-Type": "application/json",
+                            },
+                          });
 
-                        setIsPlaying(isPaused);
-                      } catch (err) {
-                        console.error("Error toggling playback:", err);
+                          setIsPlaying(isPaused);
+                        } catch (err) {
+                          console.error("Error toggling playback:", err);
+                        }
                       }
                     }}
                   >
