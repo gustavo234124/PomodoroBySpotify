@@ -69,7 +69,6 @@ useEffect(() => {
   }
 
   if (!token) {
-    // Aquí va tu UI de login normal (botón, etc)
     return (
       <div className="relative min-h-screen flex items-center justify-center">
         <ParticlesBackground />

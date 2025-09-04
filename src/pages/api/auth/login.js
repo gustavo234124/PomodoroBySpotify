@@ -3,7 +3,7 @@
 const client_id = process.env.SPOTIFY_CLIENT_ID;
 const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
 
-// Lista de permisos que vas a pedirle al usuario
+// Lista de permisos para al usuario
 const scopes = [
   "user-read-private",
   "user-read-email",
