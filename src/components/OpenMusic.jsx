@@ -234,12 +234,20 @@ export default function OpenMusic({ accessToken }) {
         };
 
         setSpotifyPlaylists([likedPlaylist, ...(data.items || [])]);
+
+        // Automatically select "Me gusta" playlist and load its tracks if none selected yet
+        if (!selectedPlaylist && likedTracks.length > 0) {
+          setSelectedPlaylist(likedPlaylist);
+          setPlaylistTracks(likedPlaylist.tracks);
+          setCurrentTrackIndex(0);
+        }
       } catch (error) {
         console.error("Error fetching playlists:", error);
       }
     };
 
     fetchPlaylists();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken]);
 
   const fetchPlaylistTracks = async (playlistId) => {
