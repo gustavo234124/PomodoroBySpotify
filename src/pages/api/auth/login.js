@@ -9,7 +9,8 @@ const scopes = [
   "user-read-email",
   "streaming",
   "user-read-playback-state",
-  "user-modify-playback-state"
+  "user-modify-playback-state",
+  "user-library-read", 
 ].join(" ");
 
 export default function handler(req, res) {
