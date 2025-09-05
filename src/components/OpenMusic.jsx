@@ -601,7 +601,6 @@ const fetchPlaylists = async () => {
           </button>
         </div>
 
-        {/* Spotify playlists carousel above album cards */}
         {selectedOption === "spotify" && (
           <>
             {/* Carrusel de playlists solo en escritorio */}
