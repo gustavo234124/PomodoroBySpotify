@@ -42,6 +42,7 @@ export default function OpenMusic({ accessToken }) {
   // Spotify playlists
   const [spotifyPlaylists, setSpotifyPlaylists] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [playlistTracks, setPlaylistTracks] = useState([]);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
@@ -234,12 +235,20 @@ export default function OpenMusic({ accessToken }) {
         };
 
         setSpotifyPlaylists([likedPlaylist, ...(data.items || [])]);
+
+        // Automatically select "Me gusta" playlist and load its tracks if none selected yet
+        if (!selectedPlaylist && likedTracks.length > 0) {
+          setSelectedPlaylist(likedPlaylist);
+          setPlaylistTracks(likedPlaylist.tracks);
+          setCurrentTrackIndex(0);
+        }
       } catch (error) {
         console.error("Error fetching playlists:", error);
       }
     };
 
     fetchPlaylists();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken]);
 
   const fetchPlaylistTracks = async (playlistId) => {
@@ -594,32 +603,37 @@ const fetchPlaylists = async () => {
 
         {/* Spotify playlists carousel above album cards */}
         {selectedOption === "spotify" && (
-          <div className="flex overflow-x-auto gap-4 pb-4 -mx-4 px-4">
-            {spotifyPlaylists.length === 0 ? (
-              <p className="text-white text-center col-span-full w-full">
-                No se encontraron playlists o aún se están cargando.
-              </p>
-            ) : (
-              spotifyPlaylists.map((playlist) => (
-                <div
-                  key={playlist.id}
-                  className="min-w-[140px] flex-shrink-0 bg-white rounded-xl overflow-hidden shadow hover:scale-105 transition cursor-pointer"
-                  onClick={() => {
-                    handleSelectSpotifyPlaylist(playlist);
-                  }}
-                >
-                  <img
-                    src={playlist.image || (playlist.images && playlist.images[0]?.url)}
-                    alt={playlist.name}
-                    className="w-full h-24 object-cover"
-                  />
-                  <div className="p-2 text-sm font-bold truncate text-center text-black">
-                    {playlist.name}
+          <>
+            {/* Carrusel de playlists solo en escritorio */}
+            <div className="hidden md:flex overflow-x-auto gap-4 pb-4 -mx-4 px-4">
+              {spotifyPlaylists.length === 0 ? (
+                <p className="text-white text-center col-span-full w-full">
+                  No se encontraron playlists o aún se están cargando.
+                </p>
+              ) : (
+                spotifyPlaylists.map((playlist) => (
+                  <div
+                    key={playlist.id}
+                    className="min-w-[140px] flex-shrink-0 bg-white rounded-xl overflow-hidden shadow hover:scale-105 transition cursor-pointer"
+                    onClick={() => handleSelectSpotifyPlaylist(playlist)}
+                  >
+                    <img
+                      src={
+                        playlist.image
+                          || (playlist.images && playlist.images[0]?.url)
+                          || "/defaultPlailys.webp"
+                      }
+                      alt={playlist.name}
+                      className="w-full h-24 object-cover"
+                    />
+                    <div className="p-2 text-sm font-bold truncate text-center text-black">
+                      {playlist.name}
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
-          </div>
+                ))
+              )}
+            </div>
+          </>
         )}
 
         <div className="hidden sm:grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
@@ -652,17 +666,37 @@ const fetchPlaylists = async () => {
 
         {selectedOption === "spotify" && (
           <div className="bg-yellow-500 rounded-3xl p-4 flex flex-col sm:flex-row gap-4">
-            {/* Portada de playlist seleccionada */}
+            {/* Mobile: Playlist image/name with modal trigger (above tracklist, inside yellow box) */}
+            <div className="block md:hidden mb-2">
+              <div
+                className="w-full bg-white rounded-xl overflow-hidden shadow cursor-pointer"
+                onClick={() => setShowPlaylistModal(true)}
+              >
+                <img
+                  src={
+                    selectedPlaylist?.image
+                      || selectedPlaylist?.images?.[0]?.url
+                      || "/defaultPlailys.webp"
+                  }
+                  alt={selectedPlaylist?.name}
+                  className="w-full h-24 object-cover"
+                />
+                <div className="p-2 text-sm font-bold truncate text-center text-black">
+                  {selectedPlaylist?.name}
+                </div>
+              </div>
+            </div>
+            {/* Desktop: playlist cover (for symmetry but hidden on mobile) */}
             <img
               src={
                 selectedPlaylist?.images?.[0]?.url || "/defaultPlailys.webp"
               }
               alt={selectedPlaylist?.name || "Playlist"}
-              className="w-[220px] h-[110px] sm:max-w-[200px] sm:h-auto object-cover rounded-3xl mx-auto cursor-pointer"
+              className="hidden md:block w-[220px] h-[180px] sm:max-w-[200px] sm:h-auto object-cover rounded-3xl mx-auto cursor-pointer"
             />
             {/* Contenido de la playlist seleccionada */}
             <div className="bg-white rounded-3xl p-4 sm:p-6 flex-1 flex flex-col justify-between mt-2 sm:mt-0">
-              <div className="max-h-[250px] overflow-y-auto pr-1">
+              <div className="max-h-[200px] overflow-y-auto pr-1">
                 <ul className="text-black font-bold mb-4">
                   {playlistTracks.map((track, index) => (
                     <li
@@ -918,6 +952,46 @@ const fetchPlaylists = async () => {
           </div>
         </div>
       )}
+
+
+ {/* Modal condicional para móviles: selector de playlists */}
+      {showPlaylistModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 z-50 flex flex-col p-4 space-y-4 overflow-y-auto md:hidden">
+          <button
+            onClick={() => setShowPlaylistModal(false)}
+            className="text-white font-bold self-end mb-2"
+          >
+            ✕ Cerrar
+          </button>
+          {spotifyPlaylists.map((playlist) => (
+            <div
+              key={playlist.id}
+              className="bg-white rounded-md overflow-hidden shadow cursor-pointer w-full h-20 max-h-20 flex items-center"
+              style={{ minHeight: "80px" }}
+              onClick={() => {
+                handleSelectSpotifyPlaylist(playlist);
+                setShowPlaylistModal(false);
+              }}
+            >
+              <img
+                src={
+                  playlist.image
+                    || (playlist.images && playlist.images[0]?.url)
+                    || "/defaultPlailys.webp"
+                }
+                alt={playlist.name}
+                className="w-20 h-20 object-cover rounded-md flex-shrink-0"
+              />
+              <div className="p-2 text-sm font-bold truncate text-black w-full text-center">
+                {playlist.name}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
     </>
   );
 }
+
+     
