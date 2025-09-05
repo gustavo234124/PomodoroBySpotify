@@ -966,7 +966,8 @@ const fetchPlaylists = async () => {
           {spotifyPlaylists.map((playlist) => (
             <div
               key={playlist.id}
-              className="bg-white rounded-xl overflow-hidden shadow cursor-pointer"
+              className="bg-white rounded-md overflow-hidden shadow cursor-pointer w-full h-20 max-h-20 flex items-center"
+              style={{ minHeight: "80px" }}
               onClick={() => {
                 handleSelectSpotifyPlaylist(playlist);
                 setShowPlaylistModal(false);
@@ -979,9 +980,9 @@ const fetchPlaylists = async () => {
                     || "/defaultPlailys.webp"
                 }
                 alt={playlist.name}
-                className="w-220 h-150 object-cover"
+                className="w-20 h-20 object-cover rounded-md flex-shrink-0"
               />
-              <div className="p-2 text-sm font-bold truncate text-center text-black">
+              <div className="p-2 text-sm font-bold truncate text-black w-full text-center">
                 {playlist.name}
               </div>
             </div>
