@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { albumSongs } from "../data/songs.js";
 import ModalSpotifyLogin from "./ModalSpotifyLogin";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 
 function SongItem({ song, isSelected, onSelect }) {
   const [duration, setDuration] = useState(null);
@@ -33,6 +33,7 @@ function SongItem({ song, isSelected, onSelect }) {
 }
 
 export default function OpenMusic({ accessToken }) {
+  const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState("predeterminada");
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
@@ -608,9 +609,28 @@ const fetchPlaylists = async () => {
             {/* Carrusel de playlists solo en escritorio */}
             <div className="hidden md:flex overflow-x-auto gap-4 pb-4 -mx-4 px-4">
               {spotifyPlaylists.length === 0 ? (
-                <p className="text-white text-center col-span-full w-full">
-                  No se encontraron playlists o aún se están cargando.
-                </p>
+                !session ? (
+                  <div className="w-full flex justify-center">
+                    <button
+                      className="bg-[#1DB954] hover:bg-[#179443] text-white font-bold py-2 px-4 rounded flex items-center gap-[10px]"
+                      onClick={() => signIn("spotify")}
+                    >
+                      Iniciar Sesión
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 168 168"
+                        fill="#FFFFFF"
+                        className="w-6 h-6"
+                      >
+                        <path d="M84 0C37.7 0 0 37.7 0 84s37.7 84 84 84 84-37.7 84-84-37.7-84-84-84zm38.8 121.2c-1.3 2-3.9 2.7-5.9 1.4-16.1-10-36.4-12.3-60.3-7.1-2.3.5-4.6-1-5-3.3-.5-2.3 1-4.6 3.3-5 26.4-6.2 48.9-3.5 67 8.2 2 1.3 2.7 3.9 1.4 5.8zm7.6-18.5c-1.6 2.5-4.9 3.3-7.4 1.7-18.4-11.8-46.4-15.2-68.3-8.7-2.8.8-5.8-.8-6.6-3.6-.8-2.8.8-5.8 3.6-6.6 25-7.3 57.3-3.6 79.1 9.7 2.4 1.5 3.2 4.8 1.6 7.5zm.2-18.7c-22.3-13.6-59.2-14.9-81.6-8.6-3.3 1-6.8-1-7.8-4.3-1-3.3 1-6.8 4.3-7.8 25-7.5 66-6.1 91.6 9.3 3.1 1.9 4.1 6 2.2 9.1-1.9 3.2-6 4.2-9.1 2.3z" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-white text-center col-span-full w-full">
+                    No se encontraron playlists o aún se están cargando.
+                  </p>
+                )
               ) : (
                 spotifyPlaylists.map((playlist) => (
                   <div
@@ -670,123 +690,121 @@ const fetchPlaylists = async () => {
           )}
         </div>
 
-        {selectedOption === "spotify" && (
-          <>
-            {spotifyPlaylists.length > 0 && (
-              <div className="bg-yellow-500 rounded-3xl p-4 flex flex-col sm:flex-row gap-4">
-                {/* Mobile: Playlist image/name with modal trigger (above tracklist, inside yellow box) */}
-                <div className="block md:hidden mb-2">
-                  <div
-                    className="w-full bg-white rounded-xl overflow-hidden shadow cursor-pointer"
-                    onClick={() => setShowPlaylistModal(true)}
-                  >
-                    <img
-                      src={
-                        selectedPlaylist?.image
-                          || selectedPlaylist?.images?.[0]?.url
-                          || "/defaultPlailys.webp"
-                      }
-                      alt={selectedPlaylist?.name}
-                      className="w-full h-24 object-cover"
-                    />
-                    <div className="p-2 text-sm font-bold truncate text-center text-black">
-                      {selectedPlaylist?.name}
-                    </div>
-                  </div>
-                </div>
-                {/* Desktop: playlist cover (for symmetry but hidden on mobile) */}
+        {selectedOption === "spotify" && spotifyPlaylists.length > 0 && (
+          <div className="bg-yellow-500 rounded-3xl p-4 flex flex-col sm:flex-row gap-4">
+            {/* Mobile: Playlist image/name with modal trigger (above tracklist, inside yellow box) */}
+            <div className="block md:hidden mb-2">
+              <div
+                className="w-full bg-white rounded-xl overflow-hidden shadow cursor-pointer"
+                onClick={() => setShowPlaylistModal(true)}
+              >
                 <img
                   src={
-                    selectedPlaylist?.images?.[0]?.url || "/defaultPlailys.webp"
+                    selectedPlaylist?.image
+                      || selectedPlaylist?.images?.[0]?.url
+                      || "/defaultPlailys.webp"
                   }
-                  alt={selectedPlaylist?.name || "Playlist"}
-                  className="hidden md:block w-[220px] h-[180px] sm:max-w-[200px] sm:h-auto object-cover rounded-3xl mx-auto cursor-pointer"
+                  alt={selectedPlaylist?.name}
+                  className="w-full h-24 object-cover"
                 />
-                {/* Contenido de la playlist seleccionada */}
-                <div className="bg-white rounded-3xl p-4 sm:p-6 flex-1 flex flex-col justify-between mt-2 sm:mt-0">
-                  <div className="max-h-[200px] overflow-y-auto pr-1">
-                    <ul className="text-black font-bold mb-4">
-                      {playlistTracks.map((track, index) => (
-                        <li
-                          key={track.id}
-                          className={`flex justify-between p-2 rounded cursor-pointer transition-colors ${
-                            currentTrackIndex === index
-                              ? "bg-black text-green-500 font-bold"
-                              : "hover:bg-gray-200 text-black"
-                          }`}
-                          onClick={() => handleSelectSpotifyTrack(index)}
-                        >
-                          <span>{track.name}</span>
-                          <span>
-                            {Math.floor(track.duration_ms / 60000)}:
-                            {(Math.floor((track.duration_ms % 60000) / 1000))
-                              .toString()
-                              .padStart(2, "0")}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                <div className="p-2 text-sm font-bold truncate text-center text-black">
+                  {selectedPlaylist?.name}
+                </div>
+              </div>
+            </div>
+            {/* Desktop: playlist cover (for symmetry but hidden on mobile) */}
+            <img
+              src={
+                selectedPlaylist?.images?.[0]?.url || "/defaultPlailys.webp"
+              }
+              alt={selectedPlaylist?.name || "Playlist"}
+              className="hidden md:block w-[220px] h-[180px] sm:max-w-[200px] sm:h-auto object-cover rounded-3xl mx-auto cursor-pointer"
+            />
+            {/* Contenido de la playlist seleccionada */}
+            <div className="bg-white rounded-3xl p-4 sm:p-6 flex-1 flex flex-col justify-between mt-2 sm:mt-0">
+              <div className="max-h-[200px] overflow-y-auto pr-1">
+                <ul className="text-black font-bold mb-4">
+                  {playlistTracks.map((track, index) => (
+                    <li
+                      key={track.id}
+                      className={`flex justify-between p-2 rounded cursor-pointer transition-colors ${
+                        currentTrackIndex === index
+                          ? "bg-black text-green-500 font-bold"
+                          : "hover:bg-gray-200 text-black"
+                      }`}
+                      onClick={() => handleSelectSpotifyTrack(index)}
+                    >
+                      <span>{track.name}</span>
+                      <span>
+                        {Math.floor(track.duration_ms / 60000)}:
+                        {(Math.floor((track.duration_ms % 60000) / 1000))
+                          .toString()
+                          .padStart(2, "0")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                {/* Progress bar con lógica condicional */}
+                <div className="h-2 bg-gray-400 rounded-full mb-4 relative">
+                  <div
+                    className="h-full bg-blue-600 rounded-full absolute top-0 left-0 transition-all duration-200"
+                    style={{ width: `${selectedOption === "spotify" ? spotifyProgress : progress}%` }}
+                  />
+                  <div
+                    className="w-4 h-4 bg-blue-600 rounded-full absolute top-[-4px] transition-all duration-200"
+                    style={{ left: `calc(${selectedOption === "spotify" ? spotifyProgress : progress}% - 8px)` }}
+                  />
+                </div>
+                
+                {/* Tiempo actual/total para Spotify */}
+                {selectedOption === "spotify" && trackDuration > 0 && (
+                  <div className="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>{formatTime(currentPosition)}</span>
+                    <span>{formatTime(trackDuration)}</span>
                   </div>
+                )}
 
-                  <div>
-                    {/* Progress bar con lógica condicional */}
-                    <div className="h-2 bg-gray-400 rounded-full mb-4 relative">
-                      <div
-                        className="h-full bg-blue-600 rounded-full absolute top-0 left-0 transition-all duration-200"
-                        style={{ width: `${selectedOption === "spotify" ? spotifyProgress : progress}%` }}
-                      />
-                      <div
-                        className="w-4 h-4 bg-blue-600 rounded-full absolute top-[-4px] transition-all duration-200"
-                        style={{ left: `calc(${selectedOption === "spotify" ? spotifyProgress : progress}% - 8px)` }}
-                      />
-                    </div>
-                    
-                    {/* Tiempo actual/total para Spotify */}
-                    {selectedOption === "spotify" && trackDuration > 0 && (
-                      <div className="flex justify-between text-sm text-gray-600 mb-2">
-                        <span>{formatTime(currentPosition)}</span>
-                        <span>{formatTime(trackDuration)}</span>
-                      </div>
-                    )}
-
-                    <div className="flex justify-around items-center text-black">
-                      <button onClick={handlePrevTrack}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="32" viewBox="0 0 37 38" fill="none">
+                <div className="flex justify-around items-center text-black">
+                  <button onClick={handlePrevTrack}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="32" viewBox="0 0 37 38" fill="none">
   <path d="M1.56278 0.000240326C1.97718 0.000240326 2.37461 0.16486 2.66763 0.457886C2.96066 0.750912 3.12528 1.14834 3.12528 1.56274L3.12528 35.9377C3.12528 36.3521 2.96066 36.7496 2.66763 37.0426C2.37461 37.3356 1.97718 37.5002 1.56278 37.5002C1.14838 37.5002 0.750954 37.3356 0.457928 37.0426C0.164902 36.7496 0.000282288 36.3521 0.000282288 35.9377L0.000282288 1.56274C-0.00252151 1.35677 0.0359802 1.15234 0.11351 0.961498C0.19104 0.77066 0.306026 0.597298 0.451679 0.451645C0.597332 0.305988 0.770702 0.191002 0.961536 0.113472C1.15237 0.0359383 1.35682 -0.00255966 1.56278 0.000240326ZM8.64612 19.9773C8.62739 19.2513 8.77761 18.5309 9.08492 17.8729C9.39223 17.2149 9.84823 16.6373 10.4169 16.1857L29.3961 1.41483C30.0753 0.900242 30.8815 0.581493 31.7294 0.498158H32.2086C32.9299 0.480106 33.6448 0.637383 34.2919 0.95649C35.0625 1.33254 35.7121 1.91718 36.1669 2.64399C36.6199 3.3684 36.8582 4.20633 36.8544 5.06066L36.8544 32.4565C36.8522 33.2781 36.6291 34.084 36.2086 34.7898C35.7752 35.4915 35.1644 36.0664 34.4378 36.4565C33.714 36.8477 32.8975 37.035 32.0756 36.9983C31.2537 36.9616 30.4572 36.7023 29.7711 36.2482L10.7711 23.5815C10.1669 23.1836 9.66695 22.6482 9.31278 22.019C8.93894 21.3976 8.71099 20.6996 8.64612 19.9773Z" fill="black"/>
 </svg>
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (selectedOption === "spotify") {
-                            const deviceId = window.spotifyDeviceId;
-                            if (!deviceId) return;
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (selectedOption === "spotify") {
+                        const deviceId = window.spotifyDeviceId;
+                        if (!deviceId) return;
 
-                            try {
-                              const response = await fetch("https://api.spotify.com/v1/me/player", {
-                                headers: {
-                                  Authorization: `Bearer ${accessToken}`,
-                                },
-                              });
-                              const data = await response.json();
+                        try {
+                          const response = await fetch("https://api.spotify.com/v1/me/player", {
+                            headers: {
+                              Authorization: `Bearer ${accessToken}`,
+                            },
+                          });
+                          const data = await response.json();
 
-                              const isPaused = data.is_playing === false;
+                          const isPaused = data.is_playing === false;
 
-                              await fetch(`https://api.spotify.com/v1/me/player/${isPaused ? "play" : "pause"}?device_id=${deviceId}`, {
-                                method: "PUT",
-                                headers: {
-                                  Authorization: `Bearer ${accessToken}`,
-                                  "Content-Type": "application/json",
-                                },
-                              });
+                          await fetch(`https://api.spotify.com/v1/me/player/${isPaused ? "play" : "pause"}?device_id=${deviceId}`, {
+                            method: "PUT",
+                            headers: {
+                              Authorization: `Bearer ${accessToken}`,
+                              "Content-Type": "application/json",
+                            },
+                          });
 
-                              setIsPlaying(isPaused);
-                            } catch (err) {
-                              console.error("Error toggling playback:", err);
-                            }
-                          }
-                        }}
-                      >
-                      {isPlaying ? (
+                          setIsPlaying(isPaused);
+                        } catch (err) {
+                          console.error("Error toggling playback:", err);
+                        }
+                      }
+                    }}
+                  >
+                  {isPlaying ? (
   <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 50 50" fill="none">
     <path d="M29.1667 39.5832V10.4165H37.5V39.5832H29.1667ZM12.5 39.5832V10.4165H20.8333V39.5832H12.5Z" fill="black"/>
   </svg>
@@ -795,18 +813,16 @@ const fetchPlaylists = async () => {
     <path d="M12.5 10.4165L39.5833 25L12.5 39.5832V10.4165Z" fill="black"/>
   </svg>
 )}
-                      </button>
-                      <button onClick={handleNextTrack}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="32" viewBox="0 0 37 38" fill="none">
+                  </button>
+                  <button onClick={handleNextTrack}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="32" viewBox="0 0 37 38" fill="none">
   <path d="M35.2917 37.5C34.8773 37.5 34.4799 37.3354 34.1869 37.0424C33.8938 36.7493 33.7292 36.3519 33.7292 35.9375V1.5625C33.7292 1.1481 33.8938 0.750671 34.1869 0.457646C34.4799 0.16462 34.8773 0 35.2917 0C35.7061 0 36.1035 0.16462 36.3966 0.457646C36.6896 0.750671 36.8542 1.1481 36.8542 1.5625V35.9375C36.857 36.1435 36.8185 36.3479 36.741 36.5387C36.6635 36.7296 36.5485 36.9029 36.4028 37.0486C36.2572 37.1943 36.0838 37.3092 35.893 37.3868C35.7021 37.4643 35.4977 37.5028 35.2917 37.5ZM28.2084 17.5229C28.2271 18.2489 28.0769 18.9693 27.7696 19.6273C27.4623 20.2853 27.0063 20.8629 26.4375 21.3146L7.45838 36.0854C6.77921 36.6 5.97296 36.9188 5.12504 37.0021H4.64588C3.92458 37.0201 3.20967 36.8629 2.56254 36.5438C1.79201 36.1677 1.1424 35.5831 0.687544 34.8563C0.234631 34.1318 -0.0037423 33.2939 4.44236e-05 32.4396V5.04375C0.00229432 4.22215 0.225354 3.41625 0.645878 2.71042C1.07926 2.00876 1.6901 1.43385 2.41671 1.04375C3.14049 0.652522 3.95695 0.465253 4.77888 0.501947C5.60081 0.53864 6.39734 0.797917 7.08338 1.25208L26.0834 13.9188C26.6875 14.3167 27.1875 14.8521 27.5417 15.4813C27.9156 16.1026 28.1435 16.8007 28.2084 17.5229Z" fill="black"/>
 </svg>
-                      </button>
-                    </div>
-                  </div>
+                  </button>
                 </div>
               </div>
-            )}
-          </>
+            </div>
+          </div>
         )}
 
       {selectedOption !== "spotify" && (
