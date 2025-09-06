@@ -568,6 +568,7 @@ const fetchPlaylists = async () => {
           w-full max-w-[700px] px-8 bg-gray-400 text-black p-6
           rounded-t-xl shadow-lg z-50
           transition-transform duration-300 ease-in-out
+          overflow-y-auto max-h-[90vh]
           ${isOpen ? "translate-y-0" : "translate-y-full"}
         `
       }
@@ -607,59 +608,62 @@ const fetchPlaylists = async () => {
         {selectedOption === "spotify" && (
           <>
             {/* Carrusel de playlists solo en escritorio */}
-          <div className="w-full flex justify-center flex-col items-center gap-2">
-              {spotifyPlaylists.length === 0 ? (
-                !session ? (
-                  <div className="w-full flex justify-center flex-col gap-5">
-                    <h2 className="text-white text-center text-4xl">Conectate con Spotify</h2>
-                    <h2 className="text-white text-center text-1xl">Escucha tus playlists favoritas <br /> directamente aquí.</h2>
-
-   <button
-    className="bg-[#1DB954] hover:bg-[#179443] text-white font-bold py-2 px-4 rounded flex items-center gap-[10px] mx-auto w-auto"
+            <div className="overflow-hidden rounded-2xl w-full">
+              <div className="hidden md:flex w-full max-w-full overflow-x-auto gap-4 pb-4 px-4 max-h-[250px]">
+                {spotifyPlaylists.length === 0 ? (
+                  !session ? (
+<div className="w-full flex flex-col items-center justify-center text-center space-y-4 mt-6 px-4">
+  <h3 className="text-white text-lg sm:text-xl md:text-2xl font-semibold">
+    Conectar con Spotify
+  </h3>                    
+  <p className="text-white text-sm sm:text-base max-w-xs">
+    Escucha tus playlists favoritas mientras directamente aquí.
+  </p>                   
+  <button
+    className="bg-[#1DB954] hover:bg-[#179443] text-white font-bold py-2 px-6 rounded flex items-center gap-2 text-sm sm:text-base"
     onClick={() => signIn("spotify")}
   >
-                      Iniciar Sesión
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 168 168"
-                        fill="#FFFFFF"
-                        className="w-6 h-6"
-                      >
-                        <path d="M84 0C37.7 0 0 37.7 0 84s37.7 84 84 84 84-37.7 84-84-37.7-84-84-84zm38.8 121.2c-1.3 2-3.9 2.7-5.9 1.4-16.1-10-36.4-12.3-60.3-7.1-2.3.5-4.6-1-5-3.3-.5-2.3 1-4.6 3.3-5 26.4-6.2 48.9-3.5 67 8.2 2 1.3 2.7 3.9 1.4 5.8zm7.6-18.5c-1.6 2.5-4.9 3.3-7.4 1.7-18.4-11.8-46.4-15.2-68.3-8.7-2.8.8-5.8-.8-6.6-3.6-.8-2.8.8-5.8 3.6-6.6 25-7.3 57.3-3.6 79.1 9.7 2.4 1.5 3.2 4.8 1.6 7.5zm.2-18.7c-22.3-13.6-59.2-14.9-81.6-8.6-3.3 1-6.8-1-7.8-4.3-1-3.3 1-6.8 4.3-7.8 25-7.5 66-6.1 91.6 9.3 3.1 1.9 4.1 6 2.2 9.1-1.9 3.2-6 4.2-9.1 2.3z" />
-                      </svg>
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-white text-center col-span-full w-full">
-                    No se encontraron playlists o aún se están cargando.
-                  </p>
-                )
-              ) : (
-                spotifyPlaylists.map((playlist) => (
-                  <div
-                    key={playlist.id}
-                    className="min-w-[140px] flex-shrink-0 bg-white rounded-xl overflow-hidden shadow hover:scale-105 transition cursor-pointer"
-                    onClick={() => handleSelectSpotifyPlaylist(playlist)}
-                  >
-                    <img
-                      src={
-                        playlist.image
-                          || (playlist.images && playlist.images[0]?.url)
-                          || "/defaultPlailys.webp"
-                      }
-                      alt={playlist.name}
-                      className="w-full h-24 object-cover"
-                    />
-                    <div className="p-2 text-sm font-bold truncate text-center text-black">
-                      {playlist.name}
+                        Iniciar Sesión
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 168 168"
+                          fill="#FFFFFF"
+                          className="w-6 h-6"
+                        >
+                          <path d="M84 0C37.7 0 0 37.7 0 84s37.7 84 84 84 84-37.7 84-84-37.7-84-84-84zm38.8 121.2c-1.3 2-3.9 2.7-5.9 1.4-16.1-10-36.4-12.3-60.3-7.1-2.3.5-4.6-1-5-3.3-.5-2.3 1-4.6 3.3-5 26.4-6.2 48.9-3.5 67 8.2 2 1.3 2.7 3.9 1.4 5.8zm7.6-18.5c-1.6 2.5-4.9 3.3-7.4 1.7-18.4-11.8-46.4-15.2-68.3-8.7-2.8.8-5.8-.8-6.6-3.6-.8-2.8.8-5.8 3.6-6.6 25-7.3 57.3-3.6 79.1 9.7 2.4 1.5 3.2 4.8 1.6 7.5zm.2-18.7c-22.3-13.6-59.2-14.9-81.6-8.6-3.3 1-6.8-1-7.8-4.3-1-3.3 1-6.8 4.3-7.8 25-7.5 66-6.1 91.6 9.3 3.1 1.9 4.1 6 2.2 9.1-1.9 3.2-6 4.2-9.1 2.3z" />
+                        </svg>
+                      </button>
                     </div>
-                  </div>
-                ))
-              )}
+                  ) : (
+                    <p className="text-white text-center col-span-full w-full">
+                      No se encontraron playlists o aún se están cargando.
+                    </p>
+                  )
+                ) : (
+                  spotifyPlaylists.map((playlist) => (
+                    <div
+                      key={playlist.id}
+                      className="min-w-[140px] flex-shrink-0 bg-white rounded-xl overflow-hidden shadow hover:scale-105 transition cursor-pointer"
+                      onClick={() => handleSelectSpotifyPlaylist(playlist)}
+                    >
+                      <img
+                        src={
+                          playlist.image
+                            || (playlist.images && playlist.images[0]?.url)
+                            || "/defaultPlailys.webp"
+                        }
+                        alt={playlist.name}
+                        className="w-full h-24 object-cover"
+                      />
+                      <div className="p-2 text-sm font-bold truncate text-center text-black">
+                        {playlist.name}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-            
           </>
-          
         )}
 
 
