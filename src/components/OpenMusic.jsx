@@ -607,14 +607,17 @@ const fetchPlaylists = async () => {
         {selectedOption === "spotify" && (
           <>
             {/* Carrusel de playlists solo en escritorio */}
-            <div className="hidden md:flex overflow-x-auto gap-4 pb-4 -mx-4 px-4">
+          <div className="w-full flex justify-center flex-col items-center gap-2">
               {spotifyPlaylists.length === 0 ? (
                 !session ? (
-                  <div className="w-full flex justify-center">
-                    <button
-                      className="bg-[#1DB954] hover:bg-[#179443] text-white font-bold py-2 px-4 rounded flex items-center gap-[10px]"
-                      onClick={() => signIn("spotify")}
-                    >
+                  <div className="w-full flex justify-center flex-col gap-5">
+                    <h2 className="text-white text-center text-4xl">Conectate con Spotify</h2>
+                    <h2 className="text-white text-center text-1xl">Escucha tus playlists favoritas <br /> directamente aquí.</h2>
+
+   <button
+    className="bg-[#1DB954] hover:bg-[#179443] text-white font-bold py-2 px-4 rounded flex items-center gap-[10px] mx-auto w-auto"
+    onClick={() => signIn("spotify")}
+  >
                       Iniciar Sesión
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
